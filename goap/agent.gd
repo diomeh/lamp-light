@@ -1,4 +1,3 @@
-@abstract
 class_name GOAPAgent
 extends RigidBody3D
 
@@ -19,7 +18,7 @@ extends RigidBody3D
 
 ## The agent's personal blackboard/memory.
 ## Stores private information like health, current target, timers, etc.
-var blackboard: GOAPState = null
+var blackboard: GOAPState = GOAPState.new()
 
 ## The currently active goal being pursued, or null if no goal is active
 var current_goal: GOAPGoal = null
@@ -96,8 +95,8 @@ func _select_goal() -> void:
 	var highest_priority: float = -INF
 
 	for goal in goals:
-		if goal.is_relevant(self, blackboard) and not goal.is_achieved(world_state):
-			var priority: float = goal.get_priority(self, blackboard)
+		if goal.is_relevant(self) and not goal.is_achieved(world_state):
+			var priority: float = goal.get_priority(self)
 			if priority > highest_priority:
 				highest_priority = priority
 				current_goal = goal
@@ -110,7 +109,7 @@ func _create_plan() -> void:
 		agent_state = State.IDLE
 		return
 
-	current_plan = GOAPPlanner.plan(self, blackboard, actions, world_state, current_goal)
+	current_plan = GOAPPlanner.plan(self)
 
 	if current_plan.is_empty():
 		print("No plan found for goal: ", current_goal.goal_name)
@@ -137,13 +136,13 @@ func _execute_plan() -> void:
 			return
 
 		current_action = current_plan[current_action_index]
-		current_action.enter(self, blackboard)
+		current_action.enter(self)
 		print("Starting action: ", current_action.action_name)
 
 	# Perform current action
-	if current_action.perform(self, blackboard):
+	if current_action.perform(self):
 		print("Completed action: ", current_action.action_name)
-		current_action.exit(self, blackboard)
+		current_action.exit(self)
 		current_action = null
 		current_action_index += 1
 
@@ -151,7 +150,7 @@ func _execute_plan() -> void:
 ## Cleans up after plan completion and transitions back to IDLE state.
 func _finish_plan() -> void:
 	if current_action:
-		current_action.exit(self, blackboard)
+		current_action.exit(self)
 
 	print("Plan complete for goal: ", current_goal.goal_name if current_goal else "None")
 	current_plan.clear()

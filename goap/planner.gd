@@ -31,17 +31,15 @@ class PlanNode:
 ## Creates an action plan to achieve the given goal from the current world state.
 ## Uses A* algorithm to find the lowest-cost sequence of actions.
 ## Returns an array of actions in execution order, or an empty array if no plan exists.
-func plan(
-	agent: GOAPAgent,
-	blackboard: GOAPState,
-	available_actions: Array[GOAPAction],
-	world_state: GOAPState,
-	goal: GOAPGoal
-) -> Array[GOAPAction]:
+func plan(agent: GOAPAgent) -> Array[GOAPAction]:
+	var available_actions := agent.actions
+	var world_state := agent.world_state
+	var goal := agent.current_goal
+
 	# Filter actions that can be performed
 	var usable_actions: Array[GOAPAction] = []
 	for action in available_actions:
-		if action.can_perform(agent, blackboard):
+		if action.can_perform(agent):
 			usable_actions.append(action)
 
 	# A* planning
@@ -100,9 +98,8 @@ func _get_lowest_cost_node(nodes: Array[PlanNode]) -> PlanNode:
 ## Checks if a given state already exists in the list of states.
 ## Returns true if found, false otherwise.
 func _state_in_list(state: GOAPState, list: Array[GOAPState]) -> bool:
-	var state_dict: Dictionary[String, Variant] = state.get_state_copy()
 	for s in list:
-		if s.get_state_copy().recursive_equal(state_dict, 1):
+		if s.matches_state(state):
 			return true
 	return false
 
@@ -110,9 +107,8 @@ func _state_in_list(state: GOAPState, list: Array[GOAPState]) -> bool:
 ## Finds a node with the given state in the list of nodes.
 ## Returns the matching PlanNode or null if not found.
 func _find_node_with_state(nodes: Array[PlanNode], state: GOAPState) -> PlanNode:
-	var state_dict: Dictionary[String, Variant] = state.get_state_copy()
 	for node in nodes:
-		if node.state.get_state_copy().recursive_equal(state_dict, 1):
+		if node.state.matches_state(state):
 			return node
 	return null
 

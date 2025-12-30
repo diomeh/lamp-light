@@ -26,12 +26,12 @@ func is_achieved(world_state: GOAPState) -> bool:
 ## Use this for context-sensitive goals (e.g., only consider "Rest" goal when health is low).
 ## Returns true if the goal is relevant, false otherwise.
 @abstract
-func is_relevant(agent: Node, blackboard: GOAPState) -> bool
+func is_relevant(agent: GOAPAgent) -> bool
 
 
 ## Dynamic priority calculation based on the agent's current situation.
 ## By default, returns the static priority value.
 ## Override to implement dynamic priority based on blackboard or agent state.
 ## Returns the calculated priority value.
-func get_priority(_agent: Node, _blackboard: GOAPState) -> float:
+func get_priority(_agent: GOAPAgent) -> float:
 	return priority

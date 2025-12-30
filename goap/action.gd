@@ -39,22 +39,22 @@ func apply_effects(world_state: GOAPState) -> GOAPState:
 ## "is the target in range?" or "do we have the required item in inventory?"
 ## Returns true if the action can be performed, false otherwise.
 @abstract
-func can_perform(agent: Node, blackboard: GOAPState) -> bool
+func can_perform(agent: GOAPAgent) -> bool
 
 
 ## Execute the action. Called every frame while the action is active.
 ## Returns true when the action is complete, false while it's still running.
 @abstract
-func perform(agent: Node, blackboard: GOAPState) -> bool
+func perform(agent: GOAPAgent) -> bool
 
 
 ## Virtual method called once when the action starts.
 ## Override for initialization logic.
-func enter(_agent: Node, _blackboard: GOAPState) -> void:
+func enter(_agent: GOAPAgent) -> void:
 	pass
 
 
 ## Virtual method called once when the action ends.
 ## Override for cleanup logic.
-func exit(_agent: Node, _blackboard: GOAPState) -> void:
+func exit(_agent: GOAPAgent) -> void:
 	pass
