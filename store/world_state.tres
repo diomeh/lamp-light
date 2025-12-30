@@ -1,0 +1,6 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://bwuatxjmajpdw"]
+
+[ext_resource type="Script" uid="uid://bblhxs6eqm82p" path="res://store/world_state.gd" id="1_xc3ps"]
+
+[resource]
+script = ExtResource("1_xc3ps")

@@ -1,7 +1,8 @@
 class_name GOAPAgent
-extends RigidBody3D
+extends Node
 
-## Main GOAP agent that manages goals, planning, and action execution.
+## Main GOAP agent component.
+## Is in charge of managing goals, planning, and action execution.
 ## This is the core controller that runs the sense-think-act loop.
 ## The agent has a personal blackboard for private memory and accesses
 ## a shared world state for global information.
@@ -19,6 +20,9 @@ extends RigidBody3D
 ## The agent's personal blackboard/memory.
 ## Stores private information like health, current target, timers, etc.
 var blackboard: GOAPState = GOAPState.new()
+
+## Reference to the entity this component controls (parent node).
+var entity: Node3D
 
 ## The currently active goal being pursued, or null if no goal is active
 var current_goal: GOAPGoal = null
@@ -42,39 +46,39 @@ enum State {
 ## Current state of the agent's state machine
 var agent_state: State = State.IDLE
 
+## Creates a new GOAPAgent component, can recieve 4 parameters treated as references.
+## wd; world state
+## bb: blackboard
+## a: actions
+## g: goals
+func _init(
+	wd: GOAPState = null,
+	bb: GOAPState = null,
+	a: Array[GOAPAction] = [],
+	g: Array[GOAPGoal] = []
+) -> void:
+	if wd: world_state = wd
+	if bb: blackboard = bb
+	if not a.is_empty(): actions = a
+	if not g.is_empty(): goals = g
+
 
 func _ready() -> void:
-	initialize_blackboard()
-	initialize_world_state()
-	setup_actions()
-	setup_goals()
+	# Get reference to the entity we're controlling
+	entity = get_parent()
 
+	if not entity:
+		push_error("GOAPAgent must be a child of an entity node!")
+		return
 
-## Override this method to set the initial blackboard values for your agent.
-## This is the agent's personal memory/knowledge.
-func initialize_blackboard() -> void:
-	pass
-
-
-## Override this method to set or contribute to the shared world state.
-## Only set values that this agent is responsible for initializing.
-func initialize_world_state() -> void:
-	pass
-
-
-## Override this method to create and add all actions to the actions array.
-## Alternatively, assign actions in the editor inspector.
-func setup_actions() -> void:
-	pass
-
-
-## Override this method to create and add all goals to the goals array.
-## Alternatively, assign goals in the editor inspector.
-func setup_goals() -> void:
-	pass
+	if not world_state:
+		world_state = GOAPState.new()
 
 
 func _process(_delta: float) -> void:
+	if not entity:
+		return
+
 	match agent_state:
 		State.IDLE:
 			_select_goal()
@@ -95,11 +99,17 @@ func _select_goal() -> void:
 	var highest_priority: float = -INF
 
 	for goal in goals:
-		if goal.is_relevant(self) and not goal.is_achieved(world_state):
-			var priority: float = goal.get_priority(self)
-			if priority > highest_priority:
-				highest_priority = priority
-				current_goal = goal
+		if not goal.is_relevant(self):
+			continue
+
+		var planning_state := get_full_state()
+		if goal.is_achieved(planning_state):
+			continue
+
+		var priority: float = goal.get_priority(self)
+		if priority > highest_priority:
+			highest_priority = priority
+			current_goal = goal
 
 
 ## Creates a plan to achieve the current goal using the planner.
@@ -124,8 +134,10 @@ func _create_plan() -> void:
 
 ## Executes the current plan action by action until complete or goal is achieved.
 func _execute_plan() -> void:
+	var planning_state := get_full_state()
+
 	# Check if goal is already achieved
-	if current_goal and current_goal.is_achieved(world_state):
+	if current_goal and current_goal.is_achieved(planning_state):
 		_finish_plan()
 		return
 
@@ -157,3 +169,9 @@ func _finish_plan() -> void:
 	current_action = null
 	current_goal = null
 	agent_state = State.IDLE
+
+
+## Merges world state and blackboard into a single source of knowledge for this agent.
+## Returns a new state.
+func get_full_state() -> GOAPState:
+	return GOAPState.merge(world_state, blackboard)

@@ -9,60 +9,56 @@ func _init() -> void:
 	action_name = "Move To Target"
 	cost = 1.0
 
-	# Preconditions: Must have a target and movement must be allowed
-	preconditions = {
-		"has_target": true,
-		"movement_allowed": true,
-		"at_target": false
-	}
-
 	# Effects: Agent will be at target after this action
 	effects = {
 		"at_target": true
 	}
 
 
-func can_perform(agent: GOAPAgent) -> bool:
-	return agent.blackboard.get_value("has_target", false)
+## Determine if given agent can perform this action.
+func can_perform(_agent: GOAPAgent) -> bool:
+	return true
 
 
 func enter(agent: GOAPAgent) -> void:
-	print("Starting movement to target: ", agent.blackboard.get_value("target_position"))
+	var target = agent.blackboard.get_value("target_position")
+	print("Begin '%s' action: target %s" % [action_name, target])
 
 
+## Execute the action. Called every frame while the action is active.
+## Returns true when the action is complete, false while it's still running.
 func perform(agent: GOAPAgent) -> bool:
-	var blackboard = agent.blackboard
+	var entity := agent.entity
+	var blackboard := agent.blackboard
 
 	var target_pos: Vector3 = blackboard.get_value("target_position", Vector3.ZERO)
 	var move_speed: float = blackboard.get_value("move_speed", 5.0)
-	var threshold: float = blackboard.get_value("arrival_threshold", 0.5)
 
-	var current_pos: Vector3 = agent.global_position
-	var distance: float = current_pos.distance_to(target_pos)
+	var threshold: float = 0.5
+	var distance: float = entity.global_position.distance_to(target_pos)
 
 	# Check if we've arrived
 	if distance <= threshold:
-		# Stop the agent
-		agent.linear_velocity = Vector3.ZERO
-		blackboard.set_value("at_target", true)
-		return true  # Action complete
+		# Use entity's movement API
+		if entity.has_method("stop_moving"):
+			entity.stop_moving()
 
-	# Move toward target
-	var direction: Vector3 = (target_pos - current_pos).normalized()
-	var velocity: Vector3 = direction * move_speed
+		agent.blackboard.set_value("at_target", true)
+		agent.blackboard.set_value("has_target", false)
 
-	# Set velocity (for RigidBody3D)
-	agent.linear_velocity = velocity
+		return true
 
-	# Make agent look in movement direction
-	if direction.length() > 0.01:
-		var look_target = current_pos + direction
-		agent.look_at(look_target, Vector3.UP)
+	if entity.has_method("move_toward"):
+		entity.move_toward(target_pos, move_speed)
 
-	return false  # Still moving
+	if entity.has_method("look_toward"):
+		entity.look_toward(target_pos)
+
+	return false
 
 
 func exit(agent: GOAPAgent) -> void:
 	# Ensure agent stops moving
-	agent.linear_velocity = Vector3.ZERO
-	print("Reached target position")
+	var entity := agent.entity
+	if entity.has_method("stop_moving"):
+		entity.stop_moving()

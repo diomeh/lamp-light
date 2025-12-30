@@ -47,6 +47,7 @@ folder_colors={
 "res://addons/": "gray",
 "res://entities/": "green",
 "res://goap/": "red",
+"res://store/": "yellow",
 "res://vendor/": "gray"
 }
 

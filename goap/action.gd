@@ -18,18 +18,18 @@ extends Resource
 @export var effects: Dictionary[String, Variant] = {}
 
 
-## Checks if this action's preconditions are satisfied by the given world state.
+## Checks if this action's preconditions are satisfied by the given state.
 ## Used by the planner during plan generation.
-## Returns true if all preconditions match the world state, false otherwise.
-func check_preconditions(world_state: GOAPState) -> bool:
-	return world_state.matches_conditions(preconditions)
+## Returns true if all preconditions match the state, false otherwise.
+func check_preconditions(state: GOAPState) -> bool:
+	return state.matches_conditions(preconditions)
 
 
-## Applies this action's effects to a world state copy.
+## Applies this action's effects to a state copy.
 ## Used by the planner to simulate action outcomes during planning.
-## Returns a new world state with the effects applied.
-func apply_effects(world_state: GOAPState) -> GOAPState:
-	var new_state: GOAPState = world_state.duplicate(true)
+## Returns a new state with the effects applied.
+func apply_effects(state: GOAPState) -> GOAPState:
+	var new_state: GOAPState = state.duplicate(true)
 	new_state.apply_effects(effects)
 	return new_state
 
@@ -51,10 +51,10 @@ func perform(agent: GOAPAgent) -> bool
 ## Virtual method called once when the action starts.
 ## Override for initialization logic.
 func enter(_agent: GOAPAgent) -> void:
-	pass
+	print("Begin '%s' action" % [action_name])
 
 
 ## Virtual method called once when the action ends.
 ## Override for cleanup logic.
 func exit(_agent: GOAPAgent) -> void:
-	pass
+	print("End '%s' action" % [action_name])

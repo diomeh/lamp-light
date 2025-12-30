@@ -1,6 +1,0 @@
-[gd_resource type="Resource" load_steps=2 format=3 uid="uid://danfyn18m8hw3"]
-
-[ext_resource type="Script" uid="uid://v4h8nmq4qp42" path="res://goap/goal.gd" id="1_tgcqr"]
-
-[resource]
-script = ExtResource("1_tgcqr")

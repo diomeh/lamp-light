@@ -33,7 +33,7 @@ class PlanNode:
 ## Returns an array of actions in execution order, or an empty array if no plan exists.
 func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 	var available_actions := agent.actions
-	var world_state := agent.world_state
+	var state := agent.get_full_state()
 	var goal := agent.current_goal
 
 	# Filter actions that can be performed
@@ -47,7 +47,7 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 	var closed_list: Array[GOAPState] = []
 
 	# Start node
-	var start_node: PlanNode = PlanNode.new(world_state, null, null, 0.0)
+	var start_node: PlanNode = PlanNode.new(state, null, null, 0.0)
 	open_list.append(start_node)
 
 	while open_list.size() > 0:

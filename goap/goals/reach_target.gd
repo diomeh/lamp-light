@@ -15,12 +15,8 @@ func _init() -> void:
 	}
 
 
-func is_relevant(agent: GOAPAgent) -> bool:
-	# Goal is relevant if we have a target and aren't already there
-	var has_target: bool = agent.blackboard.get_value("has_target", false)
-	var at_target: bool = agent.blackboard.get_value("at_target", false)
-
-	return has_target and not at_target
+func is_relevant(_agent: GOAPAgent) -> bool:
+	return true
 
 
 func get_priority(_agent: GOAPAgent) -> float:
