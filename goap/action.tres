@@ -1,0 +1,6 @@
+[gd_resource type="Resource" load_steps=2 format=3 uid="uid://8r7ankobjedm"]
+
+[ext_resource type="Script" uid="uid://m2vdbitqk6" path="res://goap/action.gd" id="1_tdh5q"]
+
+[resource]
+script = ExtResource("1_tdh5q")

@@ -31,6 +31,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
+GOAPPlanner="*res://goap/planner.gd"
 
 [debug_draw_3d]
 
@@ -44,6 +45,8 @@ enabled=PackedStringArray("res://addons/PaletteTools/plugin.cfg", "res://addons/
 
 folder_colors={
 "res://addons/": "gray",
+"res://entities/": "green",
+"res://goap/": "red",
 "res://vendor/": "gray"
 }
 

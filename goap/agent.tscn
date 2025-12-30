@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://cvy00037juvdf"]
+
+[ext_resource type="Script" uid="uid://efmj05qs48g3" path="res://goap/agent.gd" id="1_xqj88"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_erhb0"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_m0wps"]
+
+[node name="Agent" type="RigidBody3D"]
+script = ExtResource("1_xqj88")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0)
+mesh = SubResource("CapsuleMesh_erhb0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(0.25, 0, 0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0)
+shape = SubResource("CapsuleShape3D_m0wps")
