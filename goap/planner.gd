@@ -38,14 +38,14 @@ class PlanNode:
 
 	## Creates a unique key for this node's unsatisfied conditions
 	## Used for detecting duplicate states in the search
-	## TODO: this coould be replaced by Dictionary.hash() depending on implementation
+	## Returns an MD5 hash string representing the unsatisfied conditions.
 	func get_state_key() -> String:
 		var keys: Array = unsatisfied.keys()
 		keys.sort()
 		var parts: Array[String] = []
 		for key in keys:
 			parts.append("%s=%s" % [key, str(unsatisfied[key])])
-		return ",".join(parts)
+		return "|".join(parts).md5_text()
 
 
 ## Creates an action plan to achieve the given goal from the current world state.
@@ -189,14 +189,16 @@ func _get_lowest_cost_node(nodes: Array[PlanNode]) -> PlanNode:
 	return lowest
 
 
-## Converts a dictionary to a string key for hashing.
+## Creates a unique key for the given dictionary of conditions.
+## Used for detecting duplicate states in the search.
+## Returns an MD5 hash string representing the conditions.
 func _dict_to_key(dict: Dictionary[String, Variant]) -> String:
 	var keys: Array = dict.keys()
 	keys.sort()
 	var parts: Array[String] = []
 	for key in keys:
 		parts.append("%s=%s" % [key, str(dict[key])])
-	return ",".join(parts)
+	return "|".join(parts).md5_text()
 
 
 ## Finds a node with the given state key in the list.

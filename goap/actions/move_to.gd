@@ -10,12 +10,12 @@ func _init() -> void:
 	cost = 1.0
 
 	preconditions = {
-		"has_target": true
+		"has_target": true,
 	}
 
 	# Effects: Agent will be at target after this action
 	effects = {
-		"at_target": true
+		"at_target": true,
 	}
 
 

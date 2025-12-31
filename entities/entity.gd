@@ -2,10 +2,15 @@ class_name Entity
 extends RigidBody3D
 
 ## The character's GOAP brain (May be null if not AI controlled)
-@onready var goap: GOAPAgent = $Agent
+@onready var goap: GOAPAgent = %Agent
+
+@onready var _mesh: MeshInstance3D = %MeshInstance3D
+
+## This entity's mesh color
+@export var color: Color
 
 ## Movement speed
-@export var move_speed: float = 1.0
+@export var move_speed: float = 5.0
 
 ## Systems which can control this entity
 enum ControlMode { PLAYER, AI }
@@ -17,6 +22,9 @@ enum ControlMode { PLAYER, AI }
 func _ready() -> void:
 	if goap:
 		goap.blackboard.set_value("move_speed", move_speed)
+
+	if color:
+		_mesh["mesh"]["material"]["albedo_color"] = color
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

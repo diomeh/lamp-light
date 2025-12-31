@@ -11,7 +11,7 @@ func _init() -> void:
 
 	# Desired state: Agent should be at target
 	desired_state = {
-		"at_target": true
+		"at_target": true,
 	}
 
 

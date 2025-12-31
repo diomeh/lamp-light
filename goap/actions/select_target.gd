@@ -10,7 +10,7 @@ func _init() -> void:
 	cost = 1.0
 
 	preconditions = {
-		"lights_available": true
+		"lights_available": true,
 	}
 
 	effects = {

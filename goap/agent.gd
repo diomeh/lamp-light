@@ -149,11 +149,9 @@ func _execute_plan() -> void:
 
 		current_action = current_plan[current_action_index]
 		current_action.enter(self)
-		print("Starting action: ", current_action.action_name)
 
 	# Perform current action
 	if current_action.perform(self):
-		print("Completed action: ", current_action.action_name)
 		current_action.exit(self)
 		current_action = null
 		current_action_index += 1
