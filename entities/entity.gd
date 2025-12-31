@@ -1,5 +1,5 @@
 class_name Entity
-extends RigidBody3D
+extends CharacterBody3D
 
 ## The character's GOAP brain (May be null if not AI controlled)
 @onready var goap: GOAPAgent = %GOAPAgent
@@ -46,7 +46,8 @@ func _handle_player_input() -> void:
 	var direction := Vector3(input_dir.x, 0, input_dir.y).normalized()
 
 	if direction:
-		linear_velocity = direction * move_speed
+		velocity = direction * move_speed
+		move_and_slide()
 
 
 ## Movement function that can be called by control systems
@@ -57,12 +58,13 @@ func move_toward(target: Vector3, speed: float) -> void:
 
 	var next = _nav_agent.get_next_path_position()
 	var direction := (next - global_transform.origin).normalized()
-	linear_velocity = Vector3(direction.x * speed, linear_velocity.y, direction.z * speed)
+	velocity = direction * speed
+	move_and_slide()
 
 
 ## Stop all movement
 func stop_moving() -> void:
-	linear_velocity = Vector3.ZERO
+	velocity = Vector3.ZERO
 
 
 ## Make character look at a position
