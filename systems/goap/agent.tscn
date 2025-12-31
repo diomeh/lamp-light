@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cmnyh3a3dsvs3"]
 
-[ext_resource type="Script" uid="uid://efmj05qs48g3" path="res://goap/agent.gd" id="1_hmxfb"]
+[ext_resource type="Script" uid="uid://efmj05qs48g3" path="res://systems/goap/agent.gd" id="1_hmxfb"]
 
 [node name="Agent" type="Node"]
 script = ExtResource("1_hmxfb")

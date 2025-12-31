@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3 uid="uid://ccj8cjcp0npip"]
 
 [ext_resource type="Script" uid="uid://cx5veo15cfttj" path="res://entities/entity.gd" id="1_jm4vq"]
-[ext_resource type="PackedScene" uid="uid://cmnyh3a3dsvs3" path="res://goap/agent.tscn" id="2_ep4xq"]
+[ext_resource type="PackedScene" uid="uid://cmnyh3a3dsvs3" path="res://systems/goap/agent.tscn" id="2_ep4xq"]
 [ext_resource type="Resource" uid="uid://bwuatxjmajpdw" path="res://store/world_state.tres" id="3_w5oec"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w5oec"]
