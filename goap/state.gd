@@ -138,3 +138,18 @@ static func merge(a: GOAPState, b: GOAPState) -> GOAPState:
 	s.append(a)
 	s.append(b)
 	return s
+
+
+## Finds conditions from the given dictionary that are not satisfied by this state.
+## Used by the planner to determine initial unsatisfied conditions.
+## Returns a dictionary of unsatisfied conditions.
+func get_unsatisfied_conditions(
+	conditions: Dictionary[String, Variant]
+) -> Dictionary[String, Variant]:
+	var unsatisfied: Dictionary[String, Variant] = {}
+	for key in conditions:
+		var required_value: Variant = conditions[key]
+		var current_value: Variant = get_value(key)
+		if current_value != required_value:
+			unsatisfied[key] = required_value
+	return unsatisfied

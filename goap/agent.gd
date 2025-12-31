@@ -75,7 +75,7 @@ func _ready() -> void:
 		world_state = GOAPState.new()
 
 
-func _process(_delta: float) -> void:
+func _physics_process(_delta: float) -> void:
 	if not entity:
 		return
 

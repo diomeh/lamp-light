@@ -32,7 +32,7 @@ func perform(agent: GOAPAgent) -> bool:
 
 	# Iterate lights and find closest one
 	var closest: Vector3
-	var closest_distance = -INF
+	var closest_distance = - INF
 
 	for pos in world_state.get_value("light_positions"):
 		var distance := absf(entity.global_position.distance_to(pos))

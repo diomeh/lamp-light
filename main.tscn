@@ -58,7 +58,7 @@ operation = 2
 sides = 30
 
 [node name="OmniLight3D" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.980187, 1.2356783, -0.034227967)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9684355, 1.0540637, -0.034227967)
 light_color = Color(0.8317604, 0.44830137, 0.19172645, 1)
 light_energy = 9.098
 omni_range = 1.953

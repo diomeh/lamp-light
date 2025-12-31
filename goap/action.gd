@@ -58,3 +58,39 @@ func enter(_agent: GOAPAgent) -> void:
 ## Override for cleanup logic.
 func exit(_agent: GOAPAgent) -> void:
 	print("End '%s' action" % [action_name])
+
+
+## Checks if this action's effects satisfy at least one unsatisfied condition.
+## Used by the planner to filter relevant actions during backward search.
+## Returns true if the action is relevant, false otherwise.
+func satisfies_any(unsatisfied: Dictionary[String, Variant]) -> bool:
+	for key in effects:
+		if unsatisfied.has(key) and effects[key] == unsatisfied[key]:
+			return true
+	return false
+
+
+## Applies symbolic backward regression:
+## - Removes conditions satisfied by this action's effects
+## - Adds ALL action preconditions unconditionally
+## Returns the new set of unsatisfied conditions.
+func regress_conditions(
+	unsatisfied: Dictionary[String, Variant],
+	state: GOAPState = null
+) -> Dictionary[String, Variant]:
+	var new_unsatisfied: Dictionary[String, Variant] = unsatisfied.duplicate()
+
+	# Remove conditions that this action's effects will satisfy
+	for key in effects:
+		if new_unsatisfied.has(key) and effects[key] == new_unsatisfied[key]:
+			new_unsatisfied.erase(key)
+
+	# Preconditions must now be satisfied
+	new_unsatisfied.merge(preconditions, true)
+
+	# Remove conditions already satisfied by state
+	# An action may add preconditions that are already true in the world
+	if state:
+		new_unsatisfied = state.get_unsatisfied_conditions(new_unsatisfied)
+
+	return new_unsatisfied
