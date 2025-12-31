@@ -2,15 +2,16 @@ class_name Entity
 extends RigidBody3D
 
 ## The character's GOAP brain (May be null if not AI controlled)
-@onready var goap: GOAPAgent = %Agent
+@onready var goap: GOAPAgent = %GOAPAgent
 
+@onready var _nav_agent: NavigationAgent3D = %NavigationAgent3D
 @onready var _mesh: MeshInstance3D = %MeshInstance3D
 
 ## This entity's mesh color
 @export var color: Color
 
 ## Movement speed
-@export var move_speed: float = 5.0
+@export var move_speed: float = 10.0
 
 ## Systems which can control this entity
 enum ControlMode { PLAYER, AI }
@@ -50,7 +51,12 @@ func _handle_player_input() -> void:
 
 ## Movement function that can be called by control systems
 func move_toward(target: Vector3, speed: float) -> void:
-	var direction := (target - global_position).normalized()
+	# Prevent path from being recalculated every frame
+	if not _nav_agent.target_position.is_equal_approx(target):
+		_nav_agent.target_position = target
+
+	var next = _nav_agent.get_next_path_position()
+	var direction := (next - global_transform.origin).normalized()
 	linear_velocity = Vector3(direction.x * speed, linear_velocity.y, direction.z * speed)
 
 

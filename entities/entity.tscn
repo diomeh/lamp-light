@@ -21,6 +21,10 @@ mesh = SubResource("CapsuleMesh_erhb0")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_m0wps")
 
-[node name="Agent" parent="." instance=ExtResource("2_ep4xq")]
+[node name="GOAPAgent" parent="." instance=ExtResource("2_ep4xq")]
 unique_name_in_owner = true
 world_state = ExtResource("3_w5oec")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+unique_name_in_owner = true
+debug_enabled = true
