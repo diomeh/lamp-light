@@ -11,7 +11,7 @@ material = SubResource("StandardMaterial3D_w5oec")
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_m0wps"]
 
-[node name="Entity" type="CharacterBody3D"]
+[node name="Entity" type="CharacterBody3D" groups=["entities"]]
 script = ExtResource("1_jm4vq")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]

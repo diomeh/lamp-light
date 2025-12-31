@@ -24,7 +24,6 @@ resources_spreadsheet_view/freeze_first_column=true
 [application]
 
 config/name="LampLight"
-run/main_scene="uid://cfojepoglpjr6"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -47,9 +46,14 @@ folder_colors={
 "res://addons/": "gray",
 "res://entities/": "green",
 "res://goap/": "red",
+"res://playgrounds/": "purple",
 "res://store/": "yellow",
 "res://vendor/": "gray"
 }
+
+[global_group]
+
+entities=""
 
 [godot_resource_groups]
 

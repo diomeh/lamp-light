@@ -29,6 +29,20 @@ func set_value(key: String, value: Variant) -> void:
 		_data[key] = value
 
 
+## Appends a new state variable to a specific values array
+func append_value(key: String, value: Variant) -> void:
+	var arr: Variant = _data.get(key)
+
+	if not arr:
+		_data[key] = [value]
+		return
+
+	if not arr is Array: return
+	if arr.has(value): return
+
+	arr.append(value)
+
+
 ## Gets a state variable value.
 ## Returns the value if it exists, otherwise returns the default value.
 func get_value(key: String, default: Variant = null) -> Variant:
@@ -36,7 +50,7 @@ func get_value(key: String, default: Variant = null) -> Variant:
 
 
 ## Checks if a state variable exists.
-## Returns true if the key exists, false otherwise.
+## Returns true if the value exists, false otherwise.
 func has_value(key: String) -> bool:
 	return _data.has(key)
 
