@@ -1,0 +1,33 @@
+[gd_scene load_steps=8 format=3 uid="uid://ccj8cjcp0npip"]
+
+[ext_resource type="Script" uid="uid://cx5veo15cfttj" path="res://actors/actor.gd" id="1_k3sg3"]
+[ext_resource type="PackedScene" uid="uid://cmnyh3a3dsvs3" path="res://systems/goap/agent.tscn" id="2_y4hdp"]
+[ext_resource type="Resource" uid="uid://bwuatxjmajpdw" path="res://store/world_state.tres" id="3_qk0bj"]
+[ext_resource type="PackedScene" uid="uid://dhc5hncq74rj6" path="res://systems/ecs/entity.tscn" id="4_y4hdp"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w5oec"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_erhb0"]
+material = SubResource("StandardMaterial3D_w5oec")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_m0wps"]
+
+[node name="Actor" type="CharacterBody3D" groups=["actors"]]
+script = ExtResource("1_k3sg3")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+mesh = SubResource("CapsuleMesh_erhb0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_m0wps")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+unique_name_in_owner = true
+debug_enabled = true
+
+[node name="GOAPAgent" parent="." instance=ExtResource("2_y4hdp")]
+unique_name_in_owner = true
+world_state = ExtResource("3_qk0bj")
+
+[node name="ECSEntity" parent="." instance=ExtResource("4_y4hdp")]

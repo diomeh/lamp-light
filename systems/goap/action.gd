@@ -25,10 +25,10 @@
 ##     effects = {"item_used": true}
 ##
 ## func can_perform(agent: GOAPAgent) -> bool:
-##     return agent.entity.has_item()
+##     return agent.actor.has_item()
 ##
 ## func perform(agent: GOAPAgent) -> bool:
-##     return agent.entity.use_item()
+##     return agent.actor.use_item()
 ## [/codeblock]
 ##
 ## [br]

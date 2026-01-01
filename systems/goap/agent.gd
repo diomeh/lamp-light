@@ -12,7 +12,7 @@
 ##   |_________|____________|__________|
 ## [/codeblock][br]
 ##
-## [b]Usage:[/b] Add as child of an entity node. The parent becomes [member entity].[br][br]
+## [b]Usage:[/b] Add as child of an actor node. The parent becomes [member actor].[br][br]
 ##
 ## See also:[br]
 ## [GOAPAction][br]
@@ -38,9 +38,9 @@ extends Node
 ## [b]Examples:[/b] [code]target_position[/code], [code]health[/code], [code]move_speed[/code]
 var blackboard: GOAPState = GOAPState.new()
 
-## The entity this agent controls (parent node).[br]
+## The actor this agent controls (parent node).[br]
 ## Set automatically in [method _ready].
-var entity: Node3D
+var actor: Node3D
 
 ## Currently active goal, or [code]null[/code] if idle.
 var current_goal: GOAPGoal = null
@@ -83,19 +83,17 @@ func _init(
 
 
 func _ready() -> void:
-	# Get reference to the entity we're controlling
-	entity = get_parent()
+	# Get reference to the actor we're controlling
+	actor = get_parent()
 
-	if not entity:
-		push_error("GOAPAgent must be a child of an entity node!")
-		return
+	assert(actor != null, "GOAPAgent must be a child of an actor node.")
 
 	if not world_state:
 		world_state = GOAPState.new()
 
 
 func _physics_process(_delta: float) -> void:
-	if not entity:
+	if not actor:
 		return
 
 	match agent_state:

@@ -7,9 +7,7 @@ extends Node3D
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	# Set up world state
-	if not world_state:
-		push_error("Main scene requires a GOAP world state.")
-		return
+	assert(world_state != null, "Scene requires a GOAP world state.")
 
 	for light in get_tree().get_nodes_in_group("lights"):
 		world_state.append_value("light_positions", light.global_position)
@@ -17,11 +15,11 @@ func _ready() -> void:
 
 	pcam.look_at_mode = PhantomCamera3D.LookAtMode.GROUP
 
-	for entity in get_tree().get_nodes_in_group("entities"):
-		pcam.append_look_at_target(entity)
+	for actor in get_tree().get_nodes_in_group("actors"):
+		pcam.append_look_at_target(actor)
 
 		# Configure the character's GOAP brain
-		var goap : GOAPAgent = entity.goap
+		var goap: GOAPAgent = actor.goap
 		goap.world_state = world_state
 		goap.blackboard.set_value("has_target", false)
 		goap.blackboard.set_value("at_target", false)

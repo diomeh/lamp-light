@@ -1,7 +1,7 @@
 ## Action that navigates agent toward its target position.
 ##
 ## Requires [code]has_target: true[/code] and [code]target_position[/code] in blackboard.[br]
-## Completes when entity reaches within threshold distance.[br][br]
+## Completes when actor reaches within threshold distance.[br][br]
 ##
 ## [b]Preconditions:[/b] [code]{has_target: true}[/code]
 ## [br]
@@ -44,7 +44,7 @@ func enter(agent: GOAPAgent) -> void:
 	print("Begin '%s' action: target %s" % [action_name, target])
 
 
-## Moves entity toward [code]target_position[/code] each frame.[br][br]
+## Moves actor toward [code]target_position[/code] each frame.[br][br]
 ##
 ## Reads from blackboard:[br]
 ## - [code]target_position[/code]: [Vector3] destination[br]
@@ -57,31 +57,31 @@ func enter(agent: GOAPAgent) -> void:
 ## [param agent] Agent performing the action.[br]
 ## Returns [code]true[/code] when within 0.5 units of target.
 func perform(agent: GOAPAgent) -> bool:
-	var entity := agent.entity
+	var actor := agent.actor
 	var blackboard := agent.blackboard
 
 	var target_pos: Vector3 = blackboard.get_value("target_position", Vector3.ZERO)
 	var move_speed: float = blackboard.get_value("move_speed", 5.0)
 
 	var threshold: float = 0.5
-	var distance: float = entity.global_position.distance_to(target_pos)
+	var distance: float = actor.global_position.distance_to(target_pos)
 
 	# Check if we've arrived
 	if distance <= threshold:
-		# Use entity's movement API
-		if entity.has_method("stop_moving"):
-			entity.stop_moving()
+		# Use actor's movement API
+		if actor.has_method("stop_moving"):
+			actor.stop_moving()
 
 		agent.blackboard.set_value("at_target", true)
 		agent.blackboard.set_value("has_target", false)
 
 		return true
 
-	if entity.has_method("move_toward"):
-		entity.move_toward(target_pos, move_speed)
+	if actor.has_method("move_toward"):
+		actor.move_toward(target_pos, move_speed)
 
-	if entity.has_method("look_toward"):
-		entity.look_toward(target_pos)
+	if actor.has_method("look_toward"):
+		actor.look_toward(target_pos)
 
 	return false
 
@@ -92,6 +92,6 @@ func perform(agent: GOAPAgent) -> bool:
 ## [param agent] The agent ending this action.
 func exit(agent: GOAPAgent) -> void:
 	# Ensure agent stops moving
-	var entity := agent.entity
-	if entity.has_method("stop_moving"):
-		entity.stop_moving()
+	var actor := agent.actor
+	if actor.has_method("stop_moving"):
+		actor.stop_moving()

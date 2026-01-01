@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://csjccrhj5wnx7" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_3d.gd" id="3_qj7o5"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="4_n2jdb"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="5_3wwji"]
-[ext_resource type="PackedScene" uid="uid://ccj8cjcp0npip" path="res://entities/entity.tscn" id="6_v81gg"]
+[ext_resource type="PackedScene" uid="uid://ccj8cjcp0npip" path="res://actors/actor.tscn" id="6_v81gg"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7dm0k"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -48,7 +48,7 @@ tween_resource = SubResource("Resource_7mycd")
 metadata/_custom_type_script = "uid://csjccrhj5wnx7"
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.1915111, -0.29619813, 0.93572986, -0.11697779, 0.9396926, 0.3213938, -0.97449464, -0.17101005, 0.14531288, 106.560425, 42.200035, -4.6018867)
+transform = Transform3D(0.1915111, -0.2961981, 0.9357298, -0.116977744, 0.9396926, 0.3213938, -0.97449464, -0.17101005, 0.14531296, 106.560425, 42.200035, -4.6018867)
 current = true
 fov = 37.849285
 size = 7.853
@@ -71,19 +71,19 @@ light_color = Color(0.8317604, 0.44830137, 0.19172645, 1)
 light_energy = 9.098
 omni_range = 1.953
 
-[node name="Entity" parent="." instance=ExtResource("6_v81gg")]
+[node name="Actor" parent="." instance=ExtResource("6_v81gg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.07531, 1.5, 19.78498)
 color = Color(2.1658838e-07, 0.54339623, 0.12191781, 1)
 
-[node name="Entity2" parent="." instance=ExtResource("6_v81gg")]
+[node name="Actor2" parent="." instance=ExtResource("6_v81gg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.716103, 1.5, 0.22952461)
 color = Color(2.1658838e-07, 0.54339623, 0.12191781, 1)
 
-[node name="Entity3" parent="." instance=ExtResource("6_v81gg")]
+[node name="Actor3" parent="." instance=ExtResource("6_v81gg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.979805, 1.5, 47.455177)
 color = Color(2.1658838e-07, 0.54339623, 0.12191781, 1)
 
-[node name="Entity4" parent="." instance=ExtResource("6_v81gg")]
+[node name="Actor4" parent="." instance=ExtResource("6_v81gg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.696587, 2.7937045, -43.09414)
 color = Color(2.1658838e-07, 0.54339623, 0.12191781, 1)
 

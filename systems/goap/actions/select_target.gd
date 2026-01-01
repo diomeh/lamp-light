@@ -46,7 +46,7 @@ func can_perform(_agent: GOAPAgent) -> bool:
 ## [param agent] Agent performing the action.[br]
 ## Returns [code]true[/code] if target found, [code]false[/code] otherwise.
 func perform(agent: GOAPAgent) -> bool:
-	var entity := agent.entity
+	var actor := agent.actor
 	var blackboard := agent.blackboard
 	var world_state := agent.world_state
 
@@ -55,7 +55,7 @@ func perform(agent: GOAPAgent) -> bool:
 	var closest_distance = - INF
 
 	for pos in world_state.get_value("light_positions"):
-		var distance := absf(entity.global_position.distance_to(pos))
+		var distance := absf(actor.global_position.distance_to(pos))
 		if not closest or closest_distance > distance:
 			closest = pos
 			closest_distance = distance

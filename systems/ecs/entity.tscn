@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dhc5hncq74rj6"]
+
+[ext_resource type="Script" uid="uid://cfpjlac8hhgor" path="res://systems/ecs/entity.gd" id="1_7hnar"]
+
+[node name="ECSEntity" type="Node"]
+script = ExtResource("1_7hnar")

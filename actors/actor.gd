@@ -1,4 +1,4 @@
-## Base entity class with AI and player control support.
+## Base actor class with AI and player control support.
 ##
 ## Provides movement API used by GOAP actions and optional player controls.
 ## Contains a [GOAPAgent] child for AI behavior when in [enum ControlMode.AI].
@@ -10,22 +10,22 @@
 ##
 ## @see [GOAPAgent]
 ## @see [GOAPAction]
-class_name Entity
+class_name Actor
 extends CharacterBody3D
 
-## GOAP brain for AI control. May be [code]null[/code] for non-AI entities.
+## GOAP brain for AI control. May be [code]null[/code] for non-AI actors.
 @onready var goap: GOAPAgent = %GOAPAgent
 
 @onready var _nav_agent: NavigationAgent3D = %NavigationAgent3D
 @onready var _mesh: MeshInstance3D = %MeshInstance3D
 
-## Visual color applied to entity mesh.
+## Visual color applied to actor mesh.
 @export var color: Color
 
 ## Base movement speed in units/second.
 @export var move_speed: float = 10.0
 
-## Control systems that can drive this entity.
+## Control systems that can drive this actor.
 enum ControlMode {
 	PLAYER, ## Direct player input
 	AI ## GOAP-driven behavior
@@ -67,7 +67,7 @@ func _handle_player_input() -> void:
 		move_and_slide()
 
 
-## Moves entity toward target using navigation.
+## Moves actor toward target using navigation.
 ##
 ## Called by GOAP actions like [MoveTo]. Updates navigation path
 ## only when target changes.
@@ -90,7 +90,7 @@ func stop_moving() -> void:
 	velocity = Vector3.ZERO
 
 
-## Rotates entity to face target position.
+## Rotates actor to face target position.
 ##
 ## [param target] World position to look at.
 func look_toward(target: Vector3) -> void:

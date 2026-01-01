@@ -31,6 +31,7 @@ config/icon="res://icon.svg"
 
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
 GOAPPlanner="*res://systems/goap/planner.gd"
+ECSManager="*res://systems/ecs/manager.gd"
 
 [debug_draw_3d]
 
@@ -43,19 +44,19 @@ enabled=PackedStringArray("res://addons/PaletteTools/plugin.cfg", "res://addons/
 [file_customization]
 
 folder_colors={
+"res://actors/": "green",
 "res://addons/": "gray",
-"res://entities/": "green",
 "res://playgrounds/": "purple",
 "res://store/": "yellow",
 "res://systems/": "blue",
+"res://systems/ecs/": "teal",
 "res://systems/goap/": "red",
 "res://vendor/": "gray"
 }
 
 [global_group]
 
-entities=""
-points_of_interest=""
+actors=""
 
 [godot_resource_groups]
 
