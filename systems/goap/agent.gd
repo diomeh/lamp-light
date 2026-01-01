@@ -1,61 +1,80 @@
+## Main GOAP agent component implementing the sense-think-act loop.
+##
+## Manages goal selection, planning via [GOAPPlanner], and action execution.[br]
+## Each agent has:[br]
+## - [member world_state]: Shared global facts (e.g., light positions)[br]
+## - [member blackboard]: Private memory (e.g., current target, health)[br][br]
+##
+## [b]State Machine:[/b]
+## [codeblock]
+## IDLE -> PLANNING -> PERFORMING -> IDLE
+##   ^         |            |          |
+##   |_________|____________|__________|
+## [/codeblock][br]
+##
+## [b]Usage:[/b] Add as child of an entity node. The parent becomes [member entity].[br][br]
+##
+## See also:[br]
+## [GOAPAction][br]
+## [GOAPGoal][br]
+## [GOAPPlanner][br]
 class_name GOAPAgent
 extends Node
 
-## Main GOAP agent component.
-## Is in charge of managing goals, planning, and action execution.
-## This is the core controller that runs the sense-think-act loop.
-## The agent has a personal blackboard for private memory and accesses
-## a shared world state for global information.
-
-## Array of all available actions this agent can perform.
+## Available actions this agent can perform.[br]
+## Filtered by [method GOAPAction.can_perform] before planning.
 @export var actions: Array[GOAPAction] = []
 
-## Array of all goals this agent can pursue.
+## Goals this agent can pursue, selected by priority via [method GOAPGoal.get_priority].
 @export var goals: Array[GOAPGoal] = []
 
-## Reference to the shared world state.
-## This represents objective facts about the game world that all agents can access.
+## Shared world state containing global facts accessible by all agents.
+## [br][br]
+## [b]Examples:[/b] [code]light_positions[/code], [code]enemy_count[/code]
 @export var world_state: GOAPState
 
-## The agent's personal blackboard/memory.
-## Stores private information like health, current target, timers, etc.
+## Private memory for this agent's internal state.
+## [br][br]
+## [b]Examples:[/b] [code]target_position[/code], [code]health[/code], [code]move_speed[/code]
 var blackboard: GOAPState = GOAPState.new()
 
-## Reference to the entity this component controls (parent node).
+## The entity this agent controls (parent node).[br]
+## Set automatically in [method _ready].
 var entity: Node3D
 
-## The currently active goal being pursued, or null if no goal is active
+## Currently active goal, or [code]null[/code] if idle.
 var current_goal: GOAPGoal = null
 
-## The sequence of actions planned to achieve the current goal
+## Sequence of actions to achieve [member current_goal].
 var current_plan: Array[GOAPAction] = []
 
-## The action currently being executed, or null if between actions
+## Action currently executing, or [code]null[/code] if between actions.
 var current_action: GOAPAction = null
 
-## Index of the current action in the plan
+## Index into [member current_plan] for current action.
 var current_action_index: int = 0
 
-## Agent state machine states
+## Agent state machine states.
 enum State {
-	IDLE,        ## No active goal, selecting next goal
-	PLANNING,    ## Creating a plan to achieve the current goal
-	PERFORMING   ## Executing the current plan
+	IDLE, ## Selecting next goal
+	PLANNING, ## Creating plan via [GOAPPlanner]
+	PERFORMING ## Executing plan actions
 }
 
-## Current state of the agent's state machine
+## Current state machine state.
 var agent_state: State = State.IDLE
 
-## Creates a new GOAPAgent component, can recieve 4 parameters treated as references.
-## wd; world state
-## bb: blackboard
-## a: actions
-## g: goals
+## Creates a new GOAPAgent with optional initial configuration.[br][br]
+##
+## [param wd] Shared world state reference.[br]
+## [param bb] Initial blackboard state.[br]
+## [param a] Available actions array.[br]
+## [param g] Available goals array.[br]
 func _init(
 	wd: GOAPState = null,
 	bb: GOAPState = null,
-	a: Array[GOAPAction] = [],
-	g: Array[GOAPGoal] = []
+	a: Array[GOAPAction]=[],
+	g: Array[GOAPGoal]=[]
 ) -> void:
 	if wd: world_state = wd
 	if bb: blackboard = bb
@@ -92,11 +111,14 @@ func _physics_process(_delta: float) -> void:
 			_execute_plan()
 
 
-## Selects the highest priority relevant goal that hasn't been achieved.
-## Sets current_goal to the selected goal, or null if no goals are available.
+## Selects highest priority relevant goal that isn't achieved.[br][br]
+##
+## Iterates [member goals], filtering by [method GOAPGoal.is_relevant] and
+## [method GOAPGoal.is_achieved].[br]
+## Sets [member current_goal] to winner or [code]null[/code].
 func _select_goal() -> void:
 	current_goal = null
-	var highest_priority: float = -INF
+	var highest_priority: float = - INF
 
 	for goal in goals:
 		if not goal.is_relevant(self):
@@ -112,8 +134,9 @@ func _select_goal() -> void:
 			current_goal = goal
 
 
-## Creates a plan to achieve the current goal using the planner.
-## Transitions to PERFORMING if plan is found, or back to IDLE if planning fails.
+## Creates action plan via [GOAPPlanner] for [member current_goal].[br][br]
+##
+## Transitions to [enum State.PERFORMING] on success, [enum State.IDLE] on failure.
 func _create_plan() -> void:
 	if current_goal == null:
 		agent_state = State.IDLE
@@ -132,7 +155,10 @@ func _create_plan() -> void:
 		agent_state = State.PERFORMING
 
 
-## Executes the current plan action by action until complete or goal is achieved.
+## Executes [member current_plan] sequentially until goal is achieved or plan exhausted.[br][br]
+##
+## Calls [method GOAPAction.enter], [method GOAPAction.perform], and
+## [method GOAPAction.exit] for each action.
 func _execute_plan() -> void:
 	var planning_state := get_full_state()
 
@@ -157,7 +183,9 @@ func _execute_plan() -> void:
 		current_action_index += 1
 
 
-## Cleans up after plan completion and transitions back to IDLE state.
+## Cleans up plan execution and transitions to [enum State.IDLE].[br][br]
+##
+## Calls [method GOAPAction.exit] on [member current_action] if active.
 func _finish_plan() -> void:
 	if current_action:
 		current_action.exit(self)
@@ -169,7 +197,9 @@ func _finish_plan() -> void:
 	agent_state = State.IDLE
 
 
-## Merges world state and blackboard into a single source of knowledge for this agent.
-## Returns a new state.
+## Merges [member world_state] and [member blackboard] into combined state.[br]
+## Blackboard values override world state on key collision.[br][br]
+##
+## Returns a new [GOAPState] containing merged data.
 func get_full_state() -> GOAPState:
 	return GOAPState.merge(world_state, blackboard)

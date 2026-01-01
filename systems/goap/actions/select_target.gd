@@ -1,8 +1,16 @@
+## Action that selects the closest light as navigation target.
+##
+## Reads [code]light_positions[/code] from world state and sets
+## [code]target_position[/code] in blackboard to nearest light.[br][br]
+##
+## [b]Preconditions:[/b] [code]{lights_available: true}[/code]
+## [br]
+## [b]Effects:[/b] [code]{has_target: true}[/code][br][br]
+##
+## See also:[br]
+## [MoveTo]
 class_name SelectTarget
 extends GOAPAction
-
-## Action that selects a desired global space vector as target for the actor.
-## Runs every frame until target is selected.
 
 
 func _init() -> void:
@@ -18,13 +26,25 @@ func _init() -> void:
 	}
 
 
-## Determine if given agent can perform this action.
+## Always returns [code]true[/code] - target selection is always possible.[br][br]
+##
+## [param _agent] Unused.[br]
+## Returns [code]true[/code].
 func can_perform(_agent: GOAPAgent) -> bool:
 	return true
 
 
-## Execute the action. Called every frame while the action is active.
-## Returns true when the action is complete, false while it's still running.
+## Finds closest light and sets it as target.[br][br]
+##
+## Reads from world state:[br]
+## - [code]light_positions[/code]: Array of [Vector3] positions[br][br]
+##
+## Updates blackboard:[br]
+## - [code]has_target[/code]: Set to [code]true[/code][br]
+## - [code]target_position[/code]: Closest light position[br][br]
+##
+## [param agent] Agent performing the action.[br]
+## Returns [code]true[/code] if target found, [code]false[/code] otherwise.
 func perform(agent: GOAPAgent) -> bool:
 	var entity := agent.entity
 	var blackboard := agent.blackboard
