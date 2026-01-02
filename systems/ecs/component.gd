@@ -17,7 +17,7 @@ extends Node
 ## The name of this component.
 @export var component_name: String = ""
 
-## Reference to the entity this component belongs to.[br]
+## Reference to the [ECSEntity] this component belongs to.[br]
 ## Set automatically by [ECSComponent] when component is registered
 var entity: ECSEntity = null
 

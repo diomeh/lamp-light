@@ -40,7 +40,7 @@ var blackboard: GOAPState = GOAPState.new()
 
 ## The actor this agent controls (parent node).[br]
 ## Set automatically in [method _ready].
-var actor: Node3D
+var actor: Actor
 
 ## Currently active goal, or [code]null[/code] if idle.
 var current_goal: GOAPGoal = null
@@ -84,7 +84,7 @@ func _init(
 
 func _ready() -> void:
 	# Get reference to the actor we're controlling
-	actor = get_parent()
+	actor = get_parent() as Actor
 
 	assert(actor != null, "GOAPAgent must be a child of an actor node.")
 
@@ -92,7 +92,7 @@ func _ready() -> void:
 		world_state = GOAPState.new()
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if not actor:
 		return
 
@@ -106,7 +106,7 @@ func _physics_process(_delta: float) -> void:
 			_create_plan()
 
 		State.PERFORMING:
-			_execute_plan()
+			_execute_plan(delta)
 
 
 ## Selects highest priority relevant goal that isn't achieved.[br][br]
@@ -157,7 +157,7 @@ func _create_plan() -> void:
 ##
 ## Calls [method GOAPAction.enter], [method GOAPAction.perform], and
 ## [method GOAPAction.exit] for each action.
-func _execute_plan() -> void:
+func _execute_plan(delta: float) -> void:
 	var planning_state := get_full_state()
 
 	# Check if goal is already achieved
@@ -175,7 +175,7 @@ func _execute_plan() -> void:
 		current_action.enter(self)
 
 	# Perform current action
-	if current_action.perform(self):
+	if current_action.perform(self, delta):
 		current_action.exit(self)
 		current_action = null
 		current_action_index += 1

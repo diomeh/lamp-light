@@ -45,7 +45,7 @@ func can_perform(_agent: GOAPAgent) -> bool:
 ##
 ## [param agent] Agent performing the action.[br]
 ## Returns [code]true[/code] if target found, [code]false[/code] otherwise.
-func perform(agent: GOAPAgent) -> bool:
+func perform(agent: GOAPAgent, _delta: float) -> bool:
 	var actor := agent.actor
 	var blackboard := agent.blackboard
 	var world_state := agent.world_state

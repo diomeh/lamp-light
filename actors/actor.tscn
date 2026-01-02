@@ -31,3 +31,4 @@ unique_name_in_owner = true
 world_state = ExtResource("3_qk0bj")
 
 [node name="ECSEntity" parent="." instance=ExtResource("4_y4hdp")]
+unique_name_in_owner = true

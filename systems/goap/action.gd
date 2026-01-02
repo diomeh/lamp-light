@@ -92,7 +92,7 @@ func can_perform(agent: GOAPAgent) -> bool
 ## [param agent] The agent performing this action.[br]
 ## Returns [code]true[/code] when complete, [code]false[/code] while still running.
 @abstract
-func perform(agent: GOAPAgent) -> bool
+func perform(agent: GOAPAgent, delta: float) -> bool
 
 
 ## Called once when the action starts executing.[br]

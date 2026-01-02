@@ -56,7 +56,7 @@ func enter(agent: GOAPAgent) -> void:
 ##
 ## [param agent] Agent performing the action.[br]
 ## Returns [code]true[/code] when within 0.5 units of target.
-func perform(agent: GOAPAgent) -> bool:
+func perform(agent: GOAPAgent, _delta: float) -> bool:
 	var actor := agent.actor
 	var blackboard := agent.blackboard
 

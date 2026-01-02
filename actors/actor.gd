@@ -16,7 +16,12 @@ extends CharacterBody3D
 ## GOAP brain for AI control. May be [code]null[/code] for non-AI actors.
 @onready var goap: GOAPAgent = %GOAPAgent
 
+## Entity container for ECS components.
+@onready var entity: ECSEntity = %ECSEntity
+
+## Navigation agent for pathfinding.
 @onready var _nav_agent: NavigationAgent3D = %NavigationAgent3D
+
 @onready var _mesh: MeshInstance3D = %MeshInstance3D
 
 ## Visual color applied to actor mesh.
