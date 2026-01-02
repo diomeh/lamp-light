@@ -189,6 +189,7 @@ func _finish_plan() -> void:
 		current_action.exit(self)
 
 	print("Plan complete for goal: ", current_goal.goal_name if current_goal else "None")
+	current_goal.after_plan_complete(self)
 	current_plan.clear()
 	current_action = null
 	current_goal = null

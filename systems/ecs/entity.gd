@@ -19,10 +19,9 @@ func _ready() -> void:
 	if entity_id.is_empty():
 		entity_id = _generate_id()
 
+	_setup_components()
 	ECSManager.register_entity(self)
 
-	# Initialize all child components
-	_setup_components()
 
 
 func _exit_tree() -> void:

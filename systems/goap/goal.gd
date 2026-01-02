@@ -66,3 +66,14 @@ func is_relevant(agent: GOAPAgent) -> bool
 @warning_ignore("unused_parameter")
 func get_priority(agent: GOAPAgent) -> float:
 	return priority
+
+
+## Functionality to execute after a plan is sucessfully completed[be][br]
+##
+## Override to define any modifications to state after a plan is completed.
+## Useful if a goal should make itself relevant again.[br][br]
+##
+## [param agent] The agent which completed the plan.
+@warning_ignore("unused_parameter")
+func after_plan_complete(agent: GOAPAgent) -> void:
+	pass

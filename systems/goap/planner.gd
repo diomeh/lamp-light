@@ -79,11 +79,15 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 	var current_state := agent.get_full_state()
 	var goal := agent.current_goal
 
+	var usable_actions := available_actions
+	# FIXME: this check is problematic here,
+	# runtime conditions for the action should checked when symbolic state allows for it.
+	# Doing it here means we prune actions that satisfy early plan requirementes.
 	# Filter actions that can be performed at runtime
-	var usable_actions: Array[GOAPAction] = []
-	for action in available_actions:
-		if action.can_perform(agent):
-			usable_actions.append(action)
+	#var usable_actions: Array[GOAPAction] = []
+	#for action in available_actions:
+		#if action.can_perform(agent):
+			#usable_actions.append(action)
 
 	# Start with goal's desired state as unsatisfied conditions
 	# Only check current_state once at the start to determine initial unsatisfied set

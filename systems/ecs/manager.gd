@@ -74,10 +74,13 @@ func find_entities_with_component(
 	component_name: String,
 	filter: Callable = func(_e: ECSEntity): return true
 ) -> Array[ECSEntity]:
+	var res: Array[ECSEntity] = []
+
 	if entities_by_component.has(component_name):
-		return entities_by_component[component_name].filter(filter)
-	else:
-		return [] as Array[ECSEntity]
+		var filtered = entities_by_component[component_name].filter(filter)
+		res.assign(filtered)
+
+	return res
 
 
 ## Finds the nearest entity with a specific component.[br][br]
@@ -111,7 +114,7 @@ func find_nearest_entity_with_component(
 	var nearest_dist: float = INF
 
 	for entity in candidates:
-		var dist := from.distance_to(entity.global_position)
+		var dist := from.distance_to(entity.get_parent().global_position)
 		if dist < nearest_dist and (dist < max_distance or is_equal_approx(dist, max_distance)):
 			nearest_dist = dist
 			nearest = entity

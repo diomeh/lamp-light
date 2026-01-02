@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3 uid="uid://cfojepoglpjr6"]
 
-[ext_resource type="Script" uid="uid://dc3jovro85i57" path="res://playgrounds/pathfinding.gd" id="1_vg6is"]
+[ext_resource type="Script" uid="uid://dc3jovro85i57" path="res://playgrounds/pathfinding/pathfinding.gd" id="1_vg6is"]
 [ext_resource type="Resource" uid="uid://bwuatxjmajpdw" path="res://store/world_state.tres" id="2_u3qx1"]
 [ext_resource type="Script" uid="uid://csjccrhj5wnx7" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_3d.gd" id="3_qj7o5"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="4_n2jdb"]
@@ -48,7 +48,7 @@ tween_resource = SubResource("Resource_7mycd")
 metadata/_custom_type_script = "uid://csjccrhj5wnx7"
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(0.1915111, -0.2961981, 0.9357298, -0.116977744, 0.9396926, 0.3213938, -0.97449464, -0.17101005, 0.14531296, 106.560425, 42.200035, -4.6018867)
+transform = Transform3D(0.1915111, -0.29619813, 0.93572986, -0.11697779, 0.9396926, 0.3213938, -0.97449464, -0.17101005, 0.14531288, 106.560425, 42.200035, -4.6018867)
 current = true
 fov = 37.849285
 size = 7.853

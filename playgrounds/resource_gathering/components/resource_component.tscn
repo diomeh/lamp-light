@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://bg3b3vuybrm1"]
+
+[ext_resource type="Script" uid="uid://c1esgov4n80mb" path="res://playgrounds/resource_gathering/components/resource_component.gd" id="1_vcpoh"]
+
+[node name="ResourceComponent" type="Node"]
+script = ExtResource("1_vcpoh")
+component_name = "ResourceComponent"

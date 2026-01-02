@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://b1jd5qgue2buh"]
+
+[ext_resource type="Script" uid="uid://dsndoyjctxokl" path="res://playgrounds/resource_gathering/components/inventory_component.gd" id="1_ug2mk"]
+
+[node name="InventoryComponent" type="Node"]
+script = ExtResource("1_ug2mk")
+component_name = "InventoryComponent"
