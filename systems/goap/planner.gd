@@ -72,11 +72,15 @@ class PlanNode:
 ## Uses backward A* search starting from [member GOAPGoal.desired_state],
 ## finding actions whose effects satisfy unsatisfied conditions.[br][br]
 ##
-## [param agent] Agent to plan for (provides actions, goals, and state).[br]
+## [b]Architecture:[/b] Planning uses ONLY the agent's Blackboard (beliefs),
+## never WorldState (truth). Plans are based on what the agent believes,
+## which may be incomplete, stale, or incorrect.[br][br]
+##
+## [param agent] Agent to plan for (provides actions, goals, and blackboard).[br]
 ## Returns actions in execution order, or empty array if no plan exists.
 func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 	var available_actions := agent.actions
-	var current_state := agent.get_full_state()
+	var current_state := agent.blackboard
 	var goal := agent.current_goal
 
 	var usable_actions := available_actions
@@ -94,37 +98,29 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 	var goal_conditions: Dictionary[String, Variant] = goal.desired_state.duplicate()
 	var initial_unsatisfied := current_state.get_unsatisfied_conditions(goal_conditions)
 
-	# If goal is already achieved, no plan needed
 	if initial_unsatisfied.is_empty():
 		return []
 
-	# Backward A* planning
 	var open_list: Array[PlanNode] = []
-	var closed_set: Dictionary[String, bool] = {} # Set of visited state keys
+	var closed_set: Dictionary[String, bool] = {}
 
-	# Start node represents the goal state with unsatisfied conditions
 	var start_h := _calculate_heuristic(initial_unsatisfied, usable_actions)
 	var start_node := PlanNode.new(initial_unsatisfied, null, null, 0.0, start_h)
 	open_list.append(start_node)
 
 	while open_list.size() > 0:
-		# Get node with lowest f_cost
 		var current := _get_lowest_cost_node(open_list)
 		open_list.erase(current)
 
 		var state_key := current.get_state_key()
 
-		# Skip if already visited
 		if closed_set.has(state_key):
 			continue
 
 		closed_set[state_key] = true
-
-		# Terminate when all conditions are satisfied (unsatisfied == ∅)
 		if current.unsatisfied.is_empty():
 			return _reconstruct_plan(current)
 
-		# Find actions whose effects can satisfy at least one unsatisfied condition
 		for action in usable_actions:
 			if not action.satisfies_any(current.unsatisfied):
 				continue
@@ -261,7 +257,6 @@ func _reconstruct_plan(start_node: PlanNode) -> Array[GOAPAction]:
 	var plan_arr: Array[GOAPAction] = []
 	var current: PlanNode = start_node
 
-	# Walk from initial state toward goal, collecting actions
 	while current != null and current.action != null:
 		plan_arr.append(current.action)
 		current = current.parent

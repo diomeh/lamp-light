@@ -14,7 +14,7 @@
 ## [GOAPAgent][br]
 ## [GOAPPlanner][br]
 class_name GOAPState
-extends Resource
+extends Node
 
 ## Internal storage. Access via [method set_value], [method get_value], etc.
 var _data: Dictionary[String, Variant] = {}

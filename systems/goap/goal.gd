@@ -37,12 +37,12 @@ extends Resource
 @export var desired_state: Dictionary[String, Variant] = {}
 
 
-## Checks if goal is satisfied by current world state.[br][br]
+## Checks if goal is satisfied by given state.[br][br]
 ##
-## [param world_state] The state to check against [member desired_state].[br]
+## [param state] The state to check against [member desired_state].[br]
 ## Returns [code]true[/code] if all conditions match, [code]false[/code] otherwise.
-func is_achieved(world_state: GOAPState) -> bool:
-	return world_state.matches_conditions(desired_state)
+func is_achieved(state: GOAPState) -> bool:
+	return state.matches_conditions(desired_state)
 
 
 ## Context-sensitive check if this goal should be considered.[br][br]

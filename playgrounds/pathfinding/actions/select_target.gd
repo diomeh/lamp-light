@@ -48,13 +48,12 @@ func can_perform(_agent: GOAPAgent) -> bool:
 func perform(agent: GOAPAgent, _delta: float) -> bool:
 	var actor := agent.actor
 	var blackboard := agent.blackboard
-	var world_state := agent.world_state
 
 	# Iterate lights and find closest one
 	var closest: Vector3
 	var closest_distance = - INF
 
-	for pos in world_state.get_value("light_positions"):
+	for pos in WorldState.get_value("light_positions"):
 		var distance := absf(actor.global_position.distance_to(pos))
 		if not closest or closest_distance > distance:
 			closest = pos

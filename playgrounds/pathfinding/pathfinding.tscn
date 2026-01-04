@@ -1,7 +1,6 @@
-[gd_scene load_steps=12 format=3 uid="uid://cfojepoglpjr6"]
+[gd_scene load_steps=11 format=3 uid="uid://cfojepoglpjr6"]
 
 [ext_resource type="Script" uid="uid://dc3jovro85i57" path="res://playgrounds/pathfinding/pathfinding.gd" id="1_vg6is"]
-[ext_resource type="Resource" uid="uid://bwuatxjmajpdw" path="res://store/world_state.tres" id="2_u3qx1"]
 [ext_resource type="Script" uid="uid://csjccrhj5wnx7" path="res://addons/phantom_camera/scripts/phantom_camera/phantom_camera_3d.gd" id="3_qj7o5"]
 [ext_resource type="Script" uid="uid://8umksf8e80fw" path="res://addons/phantom_camera/scripts/resources/tween_resource.gd" id="4_n2jdb"]
 [ext_resource type="Script" uid="uid://bd046eokvcnu2" path="res://addons/phantom_camera/scripts/phantom_camera_host/phantom_camera_host.gd" id="5_3wwji"]
@@ -32,7 +31,6 @@ agent_radius = 1.0
 
 [node name="Pathfinding" type="Node3D"]
 script = ExtResource("1_vg6is")
-world_state = ExtResource("2_u3qx1")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_0xm2m")

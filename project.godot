@@ -33,6 +33,7 @@ PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_came
 GOAPPlanner="*res://systems/goap/planner.gd"
 ECSManager="*res://systems/ecs/manager.gd"
 SignalBus="*res://systems/signal_bus/signal_bus.gd"
+WorldState="*res://systems/world_state.gd"
 
 [debug_draw_3d]
 
@@ -40,7 +41,7 @@ settings/addon_root_folder="res://addons/debug_draw_3d"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/PaletteTools/plugin.cfg", "res://addons/Todo_Manager/plugin.cfg", "res://addons/anthonyec.camera_preview/plugin.cfg", "res://addons/godot_resource_groups/plugin.cfg", "res://addons/phantom_camera/plugin.cfg", "res://addons/resources_spreadsheet_view/plugin.cfg")
+enabled=PackedStringArray("res://addons/PaletteTools/plugin.cfg", "res://addons/Todo_Manager/plugin.cfg", "res://addons/anthonyec.camera_preview/plugin.cfg", "res://addons/gdUnit4/plugin.cfg", "res://addons/godot_resource_groups/plugin.cfg", "res://addons/phantom_camera/plugin.cfg", "res://addons/resources_spreadsheet_view/plugin.cfg")
 
 [file_customization]
 

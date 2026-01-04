@@ -28,14 +28,14 @@ extends Node
 ## Goals this agent can pursue, selected by priority via [method GOAPGoal.get_priority].
 @export var goals: Array[GOAPGoal] = []
 
-## Shared world state containing global facts accessible by all agents.
+## Private memory representing what this agent BELIEVES to be true.[br]
 ## [br][br]
-## [b]Examples:[/b] [code]light_positions[/code], [code]enemy_count[/code]
-@export var world_state: GOAPState
-
-## Private memory for this agent's internal state.
+## [b]Architecture:[/b] Blackboard is the ONLY state used for planning.[br]
+## It represents beliefs, which may be incomplete, stale, or incorrect.[br]
+## Sensors update the Blackboard based on perceived WorldState changes.[br]
 ## [br][br]
-## [b]Examples:[/b] [code]target_position[/code], [code]health[/code], [code]move_speed[/code]
+## [b]Examples:[/b] [code]target_position[/code], [code]health[/code], [code]move_speed[/code],
+## [code]visible_enemies[/code], [code]light_positions[/code]
 var blackboard: GOAPState = GOAPState.new()
 
 ## The actor this agent controls (parent node).[br]
@@ -66,17 +66,14 @@ var agent_state: State = State.IDLE
 
 ## Creates a new GOAPAgent with optional initial configuration.[br][br]
 ##
-## [param wd] Shared world state reference.[br]
 ## [param bb] Initial blackboard state.[br]
 ## [param a] Available actions array.[br]
 ## [param g] Available goals array.[br]
 func _init(
-	wd: GOAPState = null,
 	bb: GOAPState = null,
 	a: Array[GOAPAction]=[],
 	g: Array[GOAPGoal]=[]
 ) -> void:
-	if wd: world_state = wd
 	if bb: blackboard = bb
 	if not a.is_empty(): actions = a
 	if not g.is_empty(): goals = g
@@ -87,9 +84,6 @@ func _ready() -> void:
 	actor = get_parent() as Actor
 
 	assert(actor != null, "GOAPAgent must be a child of an actor node.")
-
-	if not world_state:
-		world_state = GOAPState.new()
 
 
 func _physics_process(delta: float) -> void:
@@ -113,7 +107,10 @@ func _physics_process(delta: float) -> void:
 ##
 ## Iterates [member goals], filtering by [method GOAPGoal.is_relevant] and
 ## [method GOAPGoal.is_achieved].[br]
-## Sets [member current_goal] to winner or [code]null[/code].
+## Sets [member current_goal] to winner or [code]null[/code].[br][br]
+##
+## [b]Architecture:[/b] Goals are evaluated against the Blackboard (beliefs),
+## not WorldState (truth). Agents pursue goals based on what they believe.
 func _select_goal() -> void:
 	current_goal = null
 	var highest_priority: float = - INF
@@ -122,8 +119,8 @@ func _select_goal() -> void:
 		if not goal.is_relevant(self):
 			continue
 
-		var planning_state := get_full_state()
-		if goal.is_achieved(planning_state):
+		# Check if goal is already achieved according to agent's beliefs
+		if goal.is_achieved(blackboard):
 			continue
 
 		var priority: float = goal.get_priority(self)
@@ -156,12 +153,13 @@ func _create_plan() -> void:
 ## Executes [member current_plan] sequentially until goal is achieved or plan exhausted.[br][br]
 ##
 ## Calls [method GOAPAction.enter], [method GOAPAction.perform], and
-## [method GOAPAction.exit] for each action.
+## [method GOAPAction.exit] for each action.[br][br]
+##
+## [b]Architecture:[/b] Goal achievement is checked against Blackboard (beliefs).
+## If reality differs from beliefs, sensors will update Blackboard and trigger replanning.
 func _execute_plan(delta: float) -> void:
-	var planning_state := get_full_state()
-
-	# Check if goal is already achieved
-	if current_goal and current_goal.is_achieved(planning_state):
+	# Check if goal is already achieved according to agent's beliefs
+	if current_goal and current_goal.is_achieved(blackboard):
 		_finish_plan()
 		return
 
@@ -194,11 +192,3 @@ func _finish_plan() -> void:
 	current_action = null
 	current_goal = null
 	agent_state = State.IDLE
-
-
-## Merges [member world_state] and [member blackboard] into combined state.[br]
-## Blackboard values override world state on key collision.[br][br]
-##
-## Returns a new [GOAPState] containing merged data.
-func get_full_state() -> GOAPState:
-	return GOAPState.merge(world_state, blackboard)
