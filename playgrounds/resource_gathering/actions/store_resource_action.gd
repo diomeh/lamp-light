@@ -39,22 +39,22 @@ func enter(agent: GOAPAgent) -> void:
 	store_timer = 0.0
 
 
-func perform(agent: GOAPAgent, delta: float) -> bool:
+func perform(agent: GOAPAgent, delta: float) -> PerformResult:
 	var entity = agent.actor.entity as ECSEntity
 	var inventory = entity.get_component("InventoryComponent") as InventoryComponent
 	var target_storage = agent.blackboard.get_value("target_storage") as ECSEntity
 
 	if not target_storage or not inventory:
-		return true # Failed
+		return PerformResult.FAILURE
 
 	var storage = target_storage.get_component("StorageComponent") as StorageComponent
 	if not storage:
-		return true # Failed
+		return PerformResult.FAILURE
 
 	# Wait for store time
 	store_timer += delta
 	if store_timer < STORE_TIME:
-		return false # Still storing
+		return PerformResult.RUNNING
 
 	# Transfer all resources from inventory to storage
 	var total_stored = 0
@@ -70,7 +70,7 @@ func perform(agent: GOAPAgent, delta: float) -> bool:
 	agent.blackboard.set_value("has_resource", false)
 	agent.blackboard.set_value("resource_stored", true)
 
-	return true
+	return PerformResult.SUCCESS
 
 
 func exit(agent: GOAPAgent) -> void:

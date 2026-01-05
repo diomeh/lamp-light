@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dayhwtmdhynh7"]
+
+[ext_resource type="Script" uid="uid://dc4c34v2sj4gl" path="res://systems/goap/sensor.gd" id="1_yb4mk"]
+
+[node name="GOAPSensor" type="Node"]
+script = ExtResource("1_yb4mk")

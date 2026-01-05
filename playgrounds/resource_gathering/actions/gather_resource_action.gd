@@ -42,22 +42,23 @@ func enter(agent: GOAPAgent) -> void:
 	gather_timer = 0.0
 
 
-func perform(agent: GOAPAgent, delta: float) -> bool:
+func perform(agent: GOAPAgent, delta: float) -> PerformResult:
 	var entity = agent.actor.entity as ECSEntity
 	var inventory = entity.get_component("InventoryComponent") as InventoryComponent
 	var target_resource = agent.blackboard.get_value("target_resource") as ECSEntity
 
 	if not target_resource or not inventory:
-		return true  # Failed
+		return PerformResult.FAILURE
 
 	var res_comp = target_resource.get_component("ResourceComponent") as ResourceComponent
 	if not res_comp or not res_comp.can_harvest():
-		return true  # Resource depleted
+		# Resource depleted
+		return PerformResult.FAILURE
 
 	# Wait for gather time
 	gather_timer += delta
 	if gather_timer < GATHER_TIME:
-		return false  # Still gathering
+		return PerformResult.RUNNING
 
 	# Harvest resource
 	var harvested = res_comp.harvest(GATHER_AMOUNT)
@@ -69,7 +70,7 @@ func perform(agent: GOAPAgent, delta: float) -> bool:
 	agent.blackboard.set_value("has_resource", true)
 	agent.blackboard.set_value("resource_type", res_comp.resource_type)
 
-	return true  # Done gathering
+	return PerformResult.SUCCESS
 
 
 func exit(agent: GOAPAgent) -> void:

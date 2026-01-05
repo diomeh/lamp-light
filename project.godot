@@ -33,7 +33,7 @@ PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_came
 GOAPPlanner="*res://systems/goap/planner.gd"
 ECSManager="*res://systems/ecs/manager.gd"
 SignalBus="*res://systems/signal_bus/signal_bus.gd"
-WorldState="*res://systems/world_state.gd"
+WorldState="*res://systems/goap/world_state.gd"
 
 [debug_draw_3d]
 

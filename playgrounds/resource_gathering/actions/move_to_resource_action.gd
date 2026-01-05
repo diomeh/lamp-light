@@ -50,27 +50,27 @@ func enter(agent: GOAPAgent) -> void:
 		agent.blackboard.set_value("target_resource", target_resource)
 
 
-func perform(agent: GOAPAgent, _delta: float) -> bool:
+func perform(agent: GOAPAgent, _delta: float) -> PerformResult:
 	if not target_resource:
-		return true  # Failed, but complete action
+		return PerformResult.FAILURE  # Failed, but complete action
 
 	var actor = agent.actor as Actor
 	if not actor:
-		return true
+		return PerformResult.FAILURE
 
 	var pos = target_resource.get_parent().global_position
 	var distance = actor.global_position.distance_to(pos)
 
 	# Check if we're close enough
 	if distance <= GATHER_DISTANCE:
-		return true  # Success!
+		return PerformResult.SUCCESS
 
 	# Move toward resource
 	var move_speed = agent.blackboard.get_value("move_speed", 5.0)
 	actor.move_toward(pos, move_speed)
 	actor.look_toward(pos)
 
-	return false  # Still moving
+	return PerformResult.RUNNING
 
 
 func exit(agent: GOAPAgent) -> void:

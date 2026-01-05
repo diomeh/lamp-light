@@ -44,13 +44,13 @@ func enter(agent: GOAPAgent) -> void:
 		agent.blackboard.set_value("target_storage", target_storage)
 
 
-func perform(agent: GOAPAgent, _delta: float) -> bool:
+func perform(agent: GOAPAgent, _delta: float) -> PerformResult:
 	if not target_storage:
-		return true  # Failed
+		return PerformResult.FAILURE
 
 	var actor = agent.actor as Actor
 	if not actor:
-		return true
+		return PerformResult.FAILURE
 
 	# Get position from parent container
 	var pos = target_storage.get_parent().global_position
@@ -58,14 +58,14 @@ func perform(agent: GOAPAgent, _delta: float) -> bool:
 
 	# Check if we're close enough
 	if distance <= STORE_DISTANCE:
-		return true  # Success!
+		return PerformResult.SUCCESS
 
 	# Move toward storage
 	var move_speed = agent.blackboard.get_value("move_speed", 5.0)
 	actor.move_toward(pos, move_speed)
 	actor.look_toward(pos)
 
-	return false  # Still moving
+	return PerformResult.RUNNING
 
 
 func exit(agent: GOAPAgent) -> void:

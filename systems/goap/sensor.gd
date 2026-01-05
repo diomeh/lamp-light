@@ -1,55 +1,26 @@
-## Abstract base class for GOAP sensors.
+## Base class for GOAP sensors that update agent beliefs.
 ##
-## Sensors are the mandatory bridge between WorldState events and agent Blackboards.[br]
-## They subscribe to SignalBus events, apply perception rules, and write beliefs.[br][br]
+## Sensors translate [WorldState] changes into agent [member GOAPAgent.blackboard] beliefs.[br]
+## They subscribe to [SignalBus] signals and update beliefs based on perception filters.[br][br]
 ##
-## [b]Architectural Role:[/b][br]
+## [b]Architecture:[/b][br]
+## - Sensors bridge WorldState (truth) and Blackboard (beliefs)[br]
+## - Implement perception filtering (distance, visibility, etc.)[br]
+## - Must be children of [GOAPAgent] nodes[br][br]
+##
+## [b]Usage:[/b]
 ## [codeblock]
-## WorldState → SignalBus → Sensors → Blackboard → GOAP
-## [/codeblock][br]
-##
-## [b]Perception Rules:[/b][br]
-## - Line of sight[br]
-## - Distance/range[br]
-## - Ownership/faction[br]
-## - Access rights[br]
-## - Timing/memory decay[br][br]
-##
-## [b]Critical Constraints:[/b][br]
-## - Sensors are the ONLY path from WorldState to Blackboard[br]
-## - Sensors NEVER write to WorldState[br]
-## - Sensors NEVER expose WorldState directly to GOAP[br]
-## - Multiple agents may have different beliefs about the same truth[br][br]
-##
-## [b]Example implementation:[/b]
-## [codeblock]
-## class_name VisionSensor
 ## extends GOAPSensor
 ##
-## func _init() -> void:
-##     sensor_name = "Vision"
-##     max_range = 100.0
+## func _subscribe_to_signals() -> void:
+##     SignalBus.world_state_changed.connect(_on_world_state_changed)
 ##
-## func _ready() -> void:
-##     super._ready()
-##     SignalBus.component_changed.connect(_on_component_changed)
-##
-## func can_perceive(source: Vector3) -> bool:
-##     var distance = agent.actor.global_position.distance_to(source)
-##     return distance <= max_range and has_line_of_sight(source)
-##
-## func _on_component_changed(entity_id: int, component_type: String, value: Variant) -> void:
-##     if not can_perceive(get_entity_position(entity_id)):
-##         return
-##
-##     # Update belief based on perceived change
-##     agent.blackboard.set_value("enemy_position", value)
-## [/codeblock][br]
-##
-## See also:[br]
-## [GOAPAgent][br]
-## [GOAPState][br]
-@abstract
+## func _on_world_state_changed(key: String, value: Variant, position: Vector3) -> void:
+##     if can_perceive(position):
+##         update_belief(key, value)
+## [/codeblock]
+## [br]
+## See also: [GOAPAgent], [WorldState], [SignalBus]
 class_name GOAPSensor
 extends Node
 
@@ -63,59 +34,37 @@ extends Node
 ## Set automatically in [method _ready].
 var agent: GOAPAgent
 
-## Called when sensor is added to the scene tree.[br]
-## Automatically finds parent [GOAPAgent].[br]
-## Override to subscribe to SignalBus signals.
 func _ready() -> void:
 	agent = get_parent() as GOAPAgent
 	assert(agent != null, "GOAPSensor must be a child of GOAPAgent")
 	_subscribe_to_signals()
 
 
-## Subscribe to relevant SignalBus signals.[br][br]
+## Override to connect to [SignalBus] signals.[br][br]
 ##
-## Override to connect to specific signals:[br]
-## [codeblock]
-## func _subscribe_to_signals() -> void:
-##     SignalBus.component_changed.connect(_on_component_changed)
-##     SignalBus.entity_spawned.connect(_on_entity_spawned)
-## [/codeblock]
-@abstract
-func _subscribe_to_signals() -> void
+## Called during [method _ready] after agent reference is set.[br]
+## Subscribe to relevant signals and call perception methods.
+func _subscribe_to_signals() -> void:
+	pass
 
 
-## Determines if this sensor can perceive an event from a source.[br][br]
+## Determines if this sensor can perceive an event at the given position.[br][br]
 ##
-## Override to implement perception rules like:[br]
-## - Distance checks[br]
-## - Line of sight validation[br]
-## - Faction/ownership filtering[br]
-## - Access rights[br][br]
+## Override to implement perception filtering (distance, line of sight, etc.).[br]
+## Default implementation only checks if sensor is enabled.[br][br]
 ##
-## [param source_position] World position of the perceived event/entity.[br]
-## Returns [code]true[/code] if event can be perceived, [code]false[/code] otherwise.
+## [param source_position] World position of the event source.[br]
+## [br]
+## Returns [code]true[/code] if event should be perceived.
 @warning_ignore("unused_parameter")
 func can_perceive(source_position: Vector3) -> bool:
 	return enabled
 
 
-## Updates agent's blackboard with perceived belief.[br][br]
+## Updates a belief in the agent's blackboard.[br][br]
 ##
-## This is the primary method for writing beliefs.[br]
-## Called after [method can_perceive] returns [code]true[/code].[br][br]
-##
-## [b]Examples:[/b][br]
-## [codeblock]
-## # Update simple belief
-## update_belief("enemy_spotted", true)
-##
-## # Update complex belief
-## update_belief("last_known_enemy_position", enemy_pos)
-## update_belief("last_seen_time", Time.get_ticks_msec())
-## [/codeblock][br][br]
-##
-## [param key] Belief key in the blackboard.[br]
-## [param value] Belief value to store.
+## [param key] Belief key to set.[br]
+## [param value] New belief value.
 func update_belief(key: String, value: Variant) -> void:
 	if not agent or not enabled:
 		return
@@ -125,8 +74,6 @@ func update_belief(key: String, value: Variant) -> void:
 
 ## Removes a belief from the agent's blackboard.[br][br]
 ##
-## Useful for implementing forgetting/memory decay.[br][br]
-##
 ## [param key] Belief key to remove.
 func forget_belief(key: String) -> void:
 	if not agent or not enabled:
@@ -135,10 +82,11 @@ func forget_belief(key: String) -> void:
 	agent.blackboard.remove_value(key)
 
 
-## Checks if agent already has a belief.[br][br]
+## Checks if agent has a specific belief.[br][br]
 ##
 ## [param key] Belief key to check.[br]
-## Returns [code]true[/code] if belief exists in blackboard.
+## [br]
+## Returns [code]true[/code] if belief exists.
 func has_belief(key: String) -> bool:
 	if not agent or not enabled:
 		return false
@@ -146,11 +94,12 @@ func has_belief(key: String) -> bool:
 	return agent.blackboard.has_value(key)
 
 
-## Gets current belief value.[br][br]
+## Gets a belief value from the agent's blackboard.[br][br]
 ##
 ## [param key] Belief key to retrieve.[br]
 ## [param default] Value returned if belief doesn't exist.[br]
-## Returns stored belief or [param default].
+## [br]
+## Returns belief value or [param default].
 func get_belief(key: String, default: Variant = null) -> Variant:
 	if not agent or not enabled:
 		return default

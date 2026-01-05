@@ -11,20 +11,18 @@
 ##
 ## [b]Usage:[/b]
 ## [codeblock]
-## # ECS writes to WorldState
+## # System writes to WorldState
 ## WorldState.set_value("door_open", true, door_position)
 ##
 ## # Sensors listen via SignalBus
 ## SignalBus.world_state_changed.connect(_on_world_state_changed)
 ## [/codeblock][br]
 ##
-## See also:[br]
-## [GOAPState][br]
-## [GOAPSensor][br]
+## See also: [GOAPState], [GOAPSensor]
 extends GOAPState
 
 
-## Sets a world state value and emits change signal.
+## Sets a world state value and emits change signal.[br][br]
 ##
 ## [b]Architecture:[/b] Only ECS systems should call this.[br][br]
 ##
@@ -36,9 +34,9 @@ func set_value(key: String, value: Variant, position: Vector3 = Vector3.ZERO) ->
 	SignalBus.world_state_changed.emit(key, value, position)
 
 
-## Spawns an entity in the world.
+## Spawns an entity in the world.[br][br]
 ##
-## Emits entity_spawned signal for sensors to perceive.[br][br]
+## Emits [signal SignalBus.entity_spawned] for sensors to perceive.[br][br]
 ##
 ## [param entity_id] Entity identifier.[br]
 ## [param entity_type] Type of entity (e.g., "enemy", "item", "light").[br]
@@ -47,9 +45,9 @@ func spawn_entity(entity_id: int, entity_type: String, position: Vector3) -> voi
 	SignalBus.entity_spawned.emit(entity_id, entity_type, position)
 
 
-## Destroys an entity in the world.
+## Destroys an entity in the world.[br][br]
 ##
-## Emits entity_destroyed signal for sensors to perceive.[br][br]
+## Emits [signal SignalBus.entity_destroyed] for sensors to perceive.[br][br]
 ##
 ## [param entity_id] Entity identifier.[br]
 ## [param position] Last known position.
@@ -57,9 +55,9 @@ func destroy_entity(entity_id: int, position: Vector3) -> void:
 	SignalBus.entity_destroyed.emit(entity_id, position)
 
 
-## Updates a component value on an entity.
+## Updates a component value on an entity.[br][br]
 ##
-## Emits component_changed signal for sensors to perceive.[br][br]
+## Emits [signal SignalBus.component_changed] for sensors to perceive.[br][br]
 ##
 ## [param entity_id] Entity identifier.[br]
 ## [param component_type] Component type name.[br]

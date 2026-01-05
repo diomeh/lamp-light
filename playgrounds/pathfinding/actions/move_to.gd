@@ -56,7 +56,7 @@ func enter(agent: GOAPAgent) -> void:
 ##
 ## [param agent] Agent performing the action.[br]
 ## Returns [code]true[/code] when within 0.5 units of target.
-func perform(agent: GOAPAgent, _delta: float) -> bool:
+func perform(agent: GOAPAgent, _delta: float) -> PerformResult:
 	var actor := agent.actor
 	var blackboard := agent.blackboard
 
@@ -75,7 +75,7 @@ func perform(agent: GOAPAgent, _delta: float) -> bool:
 		agent.blackboard.set_value("at_target", true)
 		agent.blackboard.set_value("has_target", false)
 
-		return true
+		return PerformResult.SUCCESS
 
 	if actor.has_method("move_toward"):
 		actor.move_toward(target_pos, move_speed)
@@ -83,7 +83,7 @@ func perform(agent: GOAPAgent, _delta: float) -> bool:
 	if actor.has_method("look_toward"):
 		actor.look_toward(target_pos)
 
-	return false
+	return PerformResult.RUNNING
 
 
 ## Called once when the action finishes or is interrupted.[br]

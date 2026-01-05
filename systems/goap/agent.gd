@@ -1,41 +1,54 @@
-## Main GOAP agent component implementing the sense-think-act loop.
+## GOAP agent that plans and executes actions to achieve goals.
 ##
-## Manages goal selection, planning via [GOAPPlanner], and action execution.[br]
-## Each agent has:[br]
-## - [member world_state]: Shared global facts (e.g., light positions)[br]
-## - [member blackboard]: Private memory (e.g., current target, health)[br][br]
+## Core component of the GOAP system. Manages belief state (blackboard),[br]
+## selects goals, creates plans, and executes actions.[br][br]
 ##
-## [b]State Machine:[/b]
+## [b]Architecture:[/b][br]
+## - [member blackboard]: Agent's beliefs (what it thinks is true)[br]
+## - [member actions]: Available actions for planning[br]
+## - [member goals]: Pursuable goals, selected by priority[br]
+## - Sensors (children): Update blackboard from WorldState[br]
+## - Three-state FSM: IDLE → PLANNING → PERFORMING → IDLE[br][br]
+##
+## [b]Key Principles:[/b][br]
+## - Plans use ONLY the blackboard (beliefs), never WorldState (truth)[br]
+## - Sensors bridge WorldState → Blackboard with perception filters[br]
+## - Actions execute in the real world[br][br]
+##
+## [b]Usage:[/b]
 ## [codeblock]
-## IDLE -> PLANNING -> PERFORMING -> IDLE
-##   ^         |            |          |
-##   |_________|____________|__________|
-## [/codeblock][br]
+## # Agent setup in scene tree:
+## Actor (parent)
+## └─ GOAPAgent
+##    ├─ ProximitySensor (child)
+##    └─ VisionSensor (child)
 ##
-## [b]Usage:[/b] Add as child of an actor node. The parent becomes [member actor].[br][br]
-##
-## See also:[br]
-## [GOAPAction][br]
-## [GOAPGoal][br]
-## [GOAPPlanner][br]
+## # Configure in code:
+## agent.actions = [move_action, gather_action]
+## agent.goals = [survive_goal, collect_goal]
+## agent.blackboard.set_value("health", 100)
+## [/codeblock]
+## [br]
+## See also: [GOAPPlanner], [GOAPAction], [GOAPGoal], [GOAPSensor]
 class_name GOAPAgent
 extends Node
 
-## Available actions this agent can perform.[br]
+## Available actions for planning.[br]
 ## Filtered by [method GOAPAction.can_perform] before planning.
 @export var actions: Array[GOAPAction] = []
 
-## Goals this agent can pursue, selected by priority via [method GOAPGoal.get_priority].
+## Goals this agent can pursue.[br]
+## Selected by priority via [method GOAPGoal.get_priority].
 @export var goals: Array[GOAPGoal] = []
 
-## Private memory representing what this agent BELIEVES to be true.[br]
-## [br][br]
+## Private memory representing what this agent BELIEVES to be true.[br][br]
+##
 ## [b]Architecture:[/b] Blackboard is the ONLY state used for planning.[br]
 ## It represents beliefs, which may be incomplete, stale, or incorrect.[br]
-## Sensors update the Blackboard based on perceived WorldState changes.[br]
-## [br][br]
-## [b]Examples:[/b] [code]target_position[/code], [code]health[/code], [code]move_speed[/code],
-## [code]visible_enemies[/code], [code]light_positions[/code]
+## Sensors update the Blackboard based on perceived [WorldState] changes.[br][br]
+##
+## [b]Examples:[/b] [code]{"target_position": Vector3.ZERO, "health": 100,
+## "visible_enemies": [1, 2, 3]}[/code]
 var blackboard: GOAPState = GOAPState.new()
 
 ## The actor this agent controls (parent node).[br]
@@ -103,14 +116,10 @@ func _physics_process(delta: float) -> void:
 			_execute_plan(delta)
 
 
-## Selects highest priority relevant goal that isn't achieved.[br][br]
+## Selects highest priority goal from available goals.[br][br]
 ##
-## Iterates [member goals], filtering by [method GOAPGoal.is_relevant] and
-## [method GOAPGoal.is_achieved].[br]
-## Sets [member current_goal] to winner or [code]null[/code].[br][br]
-##
-## [b]Architecture:[/b] Goals are evaluated against the Blackboard (beliefs),
-## not WorldState (truth). Agents pursue goals based on what they believe.
+## Called in IDLE state. Filters by [method GOAPGoal.is_relevant] and[br]
+## [method GOAPGoal.is_achieved], then selects highest [method GOAPGoal.get_priority].
 func _select_goal() -> void:
 	current_goal = null
 	var highest_priority: float = - INF
@@ -129,9 +138,10 @@ func _select_goal() -> void:
 			current_goal = goal
 
 
-## Creates action plan via [GOAPPlanner] for [member current_goal].[br][br]
+## Creates action plan to achieve [member current_goal].[br][br]
 ##
-## Transitions to [enum State.PERFORMING] on success, [enum State.IDLE] on failure.
+## Called in PLANNING state. Uses [GOAPPlanner] to find action sequence.[br]
+## Transitions to PERFORMING if plan found, IDLE if planning fails.
 func _create_plan() -> void:
 	if current_goal == null:
 		agent_state = State.IDLE
@@ -150,13 +160,13 @@ func _create_plan() -> void:
 		agent_state = State.PERFORMING
 
 
-## Executes [member current_plan] sequentially until goal is achieved or plan exhausted.[br][br]
+## Executes current plan action by action.[br][br]
 ##
-## Calls [method GOAPAction.enter], [method GOAPAction.perform], and
-## [method GOAPAction.exit] for each action.[br][br]
+## Called in PERFORMING state. Manages action lifecycle:[br]
+## [method GOAPAction.enter] → [method GOAPAction.perform] → [method GOAPAction.exit].[br]
+## Advances through plan until goal achieved or plan completes.[br][br]
 ##
-## [b]Architecture:[/b] Goal achievement is checked against Blackboard (beliefs).
-## If reality differs from beliefs, sensors will update Blackboard and trigger replanning.
+## [param delta] Time since last frame in seconds.
 func _execute_plan(delta: float) -> void:
 	# Check if goal is already achieved according to agent's beliefs
 	if current_goal and current_goal.is_achieved(blackboard):
@@ -173,15 +183,15 @@ func _execute_plan(delta: float) -> void:
 		current_action.enter(self)
 
 	# Perform current action
-	if current_action.perform(self, delta):
+	if current_action.perform(self, delta) == GOAPAction.PerformResult.SUCCESS:
 		current_action.exit(self)
 		current_action = null
 		current_action_index += 1
 
 
-## Cleans up plan execution and transitions to [enum State.IDLE].[br][br]
+## Completes current plan and returns to IDLE state.[br][br]
 ##
-## Calls [method GOAPAction.exit] on [member current_action] if active.
+## Calls [method GOAPGoal.after_plan_complete] and cleans up plan state.
 func _finish_plan() -> void:
 	if current_action:
 		current_action.exit(self)

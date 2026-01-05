@@ -45,7 +45,7 @@ func can_perform(_agent: GOAPAgent) -> bool:
 ##
 ## [param agent] Agent performing the action.[br]
 ## Returns [code]true[/code] if target found, [code]false[/code] otherwise.
-func perform(agent: GOAPAgent, _delta: float) -> bool:
+func perform(agent: GOAPAgent, _delta: float) -> PerformResult:
 	var actor := agent.actor
 	var blackboard := agent.blackboard
 
@@ -60,9 +60,9 @@ func perform(agent: GOAPAgent, _delta: float) -> bool:
 			closest_distance = distance
 
 	if not closest:
-		return false
+		return PerformResult.FAILURE
 
 	blackboard.set_value("has_target", true)
 	blackboard.set_value("target_position", closest)
 
-	return true
+	return PerformResult.SUCCESS

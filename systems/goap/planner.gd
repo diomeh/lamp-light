@@ -3,9 +3,8 @@
 ## Plans by working backwards from goal state to find actions that satisfy
 ## unsatisfied conditions. Uses an admissible heuristic for optimal plans.[br][br]
 ##
-## [b]Algorithm:[/b] Backward A* with state-space regression
-## [br]
-## [b]Complexity:[/b] O(b^d) where b = branching factor, d = plan depth
+## [b]Algorithm:[/b] Backward A* with state-space regression[br]
+## [b]Complexity:[/b] O(b^d) where b = branching factor, d = plan depth[br][br]
 ##
 ## [b]Usage:[/b]
 ## [codeblock]
@@ -13,12 +12,9 @@
 ## var plan: Array[GOAPAction] = GOAPPlanner.plan(agent)
 ## if plan.is_empty():
 ##     print("No valid plan found!")
-## [/codeblock][br]
-##
-## See also:[br]
-## [GOAPPlanner.PlanNode][br]
-## [GOAPAgent][br]
-## [GOAPAction][br]
+## [/codeblock]
+## [br]
+## See also: [GOAPAgent], [GOAPAction]
 extends Node
 
 
@@ -77,6 +73,7 @@ class PlanNode:
 ## which may be incomplete, stale, or incorrect.[br][br]
 ##
 ## [param agent] Agent to plan for (provides actions, goals, and blackboard).[br]
+## [br]
 ## Returns actions in execution order, or empty array if no plan exists.
 func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 	var available_actions := agent.actions
@@ -155,6 +152,7 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 ##
 ## [param unsatisfied] Conditions still needing satisfaction.[br]
 ## [param actions] Available actions to consider.[br]
+## [br]
 ## Returns heuristic cost estimate (never overestimates).
 func _calculate_heuristic(
 	unsatisfied: Dictionary[String, Variant],
@@ -208,6 +206,7 @@ func _calculate_heuristic(
 ## Tie-breaker: prefers higher g_cost (more actions taken = closer to solution).[br][br]
 ##
 ## [param nodes] Open list of nodes to search.[br]
+## [br]
 ## Returns node with minimum f_cost.
 func _get_lowest_cost_node(nodes: Array[PlanNode]) -> PlanNode:
 	var lowest: PlanNode = nodes[0]
@@ -224,6 +223,7 @@ func _get_lowest_cost_node(nodes: Array[PlanNode]) -> PlanNode:
 ## Generates unique hash key for a conditions dictionary.[br][br]
 ##
 ## [param dict] Dictionary of condition key-value pairs.[br]
+## [br]
 ## Returns MD5 hash of sorted key-value pairs.
 func _dict_to_key(dict: Dictionary[String, Variant]) -> String:
 	var keys: Array = dict.keys()
@@ -238,6 +238,7 @@ func _dict_to_key(dict: Dictionary[String, Variant]) -> String:
 ##
 ## [param nodes] List of nodes to search.[br]
 ## [param state_key] Hash key to match.[br]
+## [br]
 ## Returns matching node or [code]null[/code] if not found.
 func _find_node_with_key(nodes: Array[PlanNode], state_key: String) -> PlanNode:
 	for node in nodes:
@@ -252,6 +253,7 @@ func _find_node_with_key(nodes: Array[PlanNode], state_key: String) -> PlanNode:
 ## actions are collected in execution order.[br][br]
 ##
 ## [param start_node] Terminal node where [code]unsatisfied.is_empty()[/code].[br]
+## [br]
 ## Returns actions in execution order.
 func _reconstruct_plan(start_node: PlanNode) -> Array[GOAPAction]:
 	var plan_arr: Array[GOAPAction] = []

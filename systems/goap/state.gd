@@ -10,9 +10,7 @@
 ## var hp = state.get_value("health", 0)
 ## [/codeblock][br]
 ##
-## See also:[br]
-## [GOAPAgent][br]
-## [GOAPPlanner][br]
+## See also: [GOAPAgent], [GOAPPlanner]
 class_name GOAPState
 extends Node
 
@@ -46,7 +44,7 @@ func set_value(key: String, value: Variant) -> void:
 
 ## Appends value to an array stored at key.[br][br]
 ##
-## Creates array if key doesn't exist. No-op if key holds non-array
+## Creates array if key doesn't exist. No-op if key holds non-array[br]
 ## or value already present.[br][br]
 ##
 ## [param key] Variable name containing array.[br]
@@ -86,20 +84,16 @@ func has_value(key: String) -> bool:
 ## [param key] Variable name to remove.[br]
 ## Returns [code]true[/code] if removed, [code]false[/code] if key didn't exist.
 func remove_value(key: String) -> bool:
-	if not _data.has(key):
-		return false
-
-	_data.erase(key)
-	return true
+	return _data.erase(key)
 
 
-## Returns shallow copy of internal dictionary.[br][br]
+## Returns deep copy of internal dictionary.[br][br]
 ##
 ## Safe for modification. Use for planning, simulation, or serialization.[br][br]
 ##
 ## Returns copy of state data.
 func get_state_copy() -> Dictionary[String, Variant]:
-	return _data.duplicate()
+	return _data.duplicate(true)
 
 
 ## Returns direct reference to internal dictionary.[br][br]
@@ -128,6 +122,7 @@ func clear() -> void:
 ## Checks if all conditions are satisfied by this state.[br][br]
 ##
 ## [param conditions] Key-value pairs that must match.[br]
+## [br]
 ## Returns [code]true[/code] if all conditions match, [code]false[/code] otherwise.
 func matches_conditions(conditions: Dictionary[String, Variant]) -> bool:
 	for key in conditions:
@@ -139,6 +134,7 @@ func matches_conditions(conditions: Dictionary[String, Variant]) -> bool:
 ## Checks if another state's data is subset of this state.[br][br]
 ##
 ## [param state] State to compare against.[br]
+## [br]
 ## Returns [code]true[/code] if all entries in [param state] match.
 func matches_state(state: GOAPState) -> bool:
 	return matches_conditions(state.get_state_ref())
@@ -201,6 +197,7 @@ func append(state: GOAPState) -> void:
 ##
 ## [param a] First state (lower priority on collision).[br]
 ## [param b] Second state (higher priority on collision).[br]
+## [br]
 ## Returns a new [GOAPState] with merged data.
 static func merge(a: GOAPState, b: GOAPState) -> GOAPState:
 	var s = GOAPState.new()
@@ -214,7 +211,8 @@ static func merge(a: GOAPState, b: GOAPState) -> GOAPState:
 ## Used by [GOAPPlanner] to determine which goal conditions need actions.[br][br]
 ##
 ## [param conditions] Required key-value pairs to check.[br]
-## Returns a dictionary of conditions where this state differs from required values[br].
+## [br]
+## Returns dictionary of conditions where this state differs from required values.
 func get_unsatisfied_conditions(
 	conditions: Dictionary[String, Variant]
 ) -> Dictionary[String, Variant]:
