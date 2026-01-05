@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://b0kec0v07n7sj"]
-
-[ext_resource type="Script" uid="uid://d4nsueikyqoqa" path="res://playgrounds/resource_gathering/components/storage_component.gd" id="1_iwotm"]
-
-[node name="StorageComponent" type="Node"]
-script = ExtResource("1_iwotm")
-component_name = "StorageComponent"

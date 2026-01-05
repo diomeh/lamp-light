@@ -32,7 +32,7 @@ config/icon="res://icon.svg"
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
 GOAPPlanner="*res://systems/goap/planner.gd"
 ECSManager="*res://systems/ecs/manager.gd"
-SignalBus="*res://systems/signal_bus/signal_bus.gd"
+SignalBus="*res://systems/goap/signal_bus.gd"
 WorldState="*res://systems/goap/world_state.gd"
 
 [debug_draw_3d]
@@ -54,6 +54,7 @@ folder_colors={
 "res://systems/": "blue",
 "res://systems/ecs/": "teal",
 "res://systems/goap/": "red",
+"res://tests/": "green",
 "res://vendor/": "gray"
 }
 
