@@ -2,33 +2,56 @@
 
 LampLight is a Godot 4.5 game project built around modular AI and simulation systems, using Goal Oriented Action Planning.
 
+## Table of Contents
+
+- [LampLight](#lamplight)
+  - [Table of Contents](#table-of-contents)
+  - [Project Domains](#project-domains)
+    - [GOAP (Goal-Oriented Action Planning)](#goap-goal-oriented-action-planning)
+    - [ECS (Entity Component System)](#ecs-entity-component-system)
+    - [Actor (Integration Layer)](#actor-integration-layer)
+    - [Systems](#systems)
+    - [Playgrounds](#playgrounds)
+    - [Documentation](#documentation)
+  - [Conventions](#conventions)
+  - [Enabled Addons](#enabled-addons)
+  - [Contributing](#contributing)
+    - [Commit Message Format](#commit-message-format)
+  - [License](#license)
+
 ## Project Domains
 
 ### GOAP (Goal-Oriented Action Planning)
+
 - Custom AI system for agent planning and decision-making.
 - Core components: `GOAPState`, `GOAPAction`, `GOAPGoal`, `GOAPAgent`, `GOAPPlanner`.
 - Agents merge shared world state and private blackboard for planning.
 - Extendable via new actions (`goap/actions/`) and goals (`goap/goals/`).
 
 ### ECS (Entity Component System)
+
 - Entities are `RigidBody3D` nodes with optional AI agent children.
 - Movement and interaction APIs: `move_toward()`, `stop_moving()`, `look_toward()`.
 - Designed for extensibility and modularity.
 
 ### Actor (Integration Layer)
+
 - Actors serve as the merging point between GOAP and ECS.
 - Each actor links entity logic with AI agent behavior.
 - Supports dual control modes (PLAYER/AI).
 
 ### Systems
+
 - Future systems will be added to `/systems` for modular expansion (e.g., inventory, dialogue).
 - Each system is self-contained and interacts via defined APIs.
 
 ### Playgrounds
+
 - `/playgrounds/` contains isolated scenes and setups for testing features and mechanics.
 - Not connected to main gameplay loop.
 
 ### Documentation
+
 - `/docs/` holds detailed project information, guides, and technical references.
 - The README provides a high-level overview only.
 - Refer to the [glossary](docs/glossary.md) for key terms and concepts, both technical and thematic.
@@ -72,19 +95,19 @@ The commit message should be structured as follows:
 
 Where `type` is one of the following:
 
-| Type              | Description                                                                                             | Example Commit Message                            |
-| ----------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `fix`             | Patches a bug in your codebase (correlates with PATCH in Semantic Versioning)                           | `fix: correct typo in README`                     |
-| `feat`            | Introduces a new feature to the codebase (correlates with MINOR in Semantic Versioning)                 | `feat: add new user login functionality`          |
-| `BREAKING CHANGE` | Introduces a breaking API change (correlates with MAJOR in Semantic Versioning)                         | `feat!: drop support for Node 8`                  |
-| `build`           | Changes that affect the build system or external dependencies                                           | `build: update dependency version`                |
-| `chore`           | Other changes that don't modify src or test files                                                       | `chore: update package.json scripts`              |
-| `ci`              | Changes to CI configuration files and scripts                                                           | `ci: add CircleCI config`                         |
-| `docs`            | Documentation only changes                                                                              | `docs: update API documentation`                  |
-| `style`           | Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.) | `style: fix linting errors`                       |
-| `refactor`        | Code change that neither fixes a bug nor adds a feature                                                 | `refactor: rename variable for clarity`           |
-| `perf`            | Code change that improves performance                                                                   | `perf: reduce size of image files`                |
-| `test`            | Adding missing tests or correcting existing tests                                                       | `test: add unit tests for new feature`            |
+| Type              | Description                                                                                             | Example Commit Message                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `fix`             | Patches a bug in your codebase (correlates with PATCH in Semantic Versioning)                           | `fix: correct typo in README`            |
+| `feat`            | Introduces a new feature to the codebase (correlates with MINOR in Semantic Versioning)                 | `feat: add new user login functionality` |
+| `BREAKING CHANGE` | Introduces a breaking API change (correlates with MAJOR in Semantic Versioning)                         | `feat!: drop support for Node 8`         |
+| `build`           | Changes that affect the build system or external dependencies                                           | `build: update dependency version`       |
+| `chore`           | Other changes that don't modify src or test files                                                       | `chore: update package.json scripts`     |
+| `ci`              | Changes to CI configuration files and scripts                                                           | `ci: add CircleCI config`                |
+| `docs`            | Documentation only changes                                                                              | `docs: update API documentation`         |
+| `style`           | Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.) | `style: fix linting errors`              |
+| `refactor`        | Code change that neither fixes a bug nor adds a feature                                                 | `refactor: rename variable for clarity`  |
+| `perf`            | Code change that improves performance                                                                   | `perf: reduce size of image files`       |
+| `test`            | Adding missing tests or correcting existing tests                                                       | `test: add unit tests for new feature`   |
 
 ## License
 
