@@ -24,7 +24,7 @@ extends Node
 ## Forms a linked list via [member parent] for plan reconstruction.
 class PlanNode:
 	## Conditions still needing satisfaction. Empty = goal reached.
-	var unsatisfied: Dictionary[String, Variant]
+	var unsatisfied: Dictionary[StringName, Variant]
 	## Action satisfying some conditions ([code]null[/code] for start node).
 	var action: GOAPAction
 	## Previous node in search path (toward goal state).
@@ -37,7 +37,7 @@ class PlanNode:
 	var f_cost: float
 
 	func _init(
-		u: Dictionary[String, Variant],
+		u: Dictionary[StringName, Variant],
 		a: GOAPAction,
 		p: PlanNode,
 		g: float,
@@ -54,10 +54,10 @@ class PlanNode:
 	## Used by closed set to detect duplicate states.[br][br]
 	##
 	## Returns MD5 hash string of sorted condition key-value pairs.
-	func get_state_key() -> String:
+	func get_state_key() -> StringName:
 		var keys: Array = unsatisfied.keys()
 		keys.sort()
-		var parts: Array[String] = []
+		var parts: Array[StringName] = []
 		for key in keys:
 			parts.append("%s=%s" % [key, str(unsatisfied[key])])
 		return "|".join(parts).md5_text()
@@ -76,9 +76,9 @@ class PlanNode:
 ## [br]
 ## Returns actions in execution order, or empty array if no plan exists.
 func plan(agent: GOAPAgent) -> Array[GOAPAction]:
-	var available_actions := agent.actions
-	var current_state := agent.blackboard
-	var goal := agent.current_goal
+	var available_actions: Array[GOAPAction] = agent.actions
+	var current_state: GOAPState = agent.blackboard
+	var goal: GOAPGoal = agent.current_goal
 
 	var usable_actions := available_actions
 	# FIXME: this check is problematic here,
@@ -92,14 +92,14 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 
 	# Start with goal's desired state as unsatisfied conditions
 	# Only check current_state once at the start to determine initial unsatisfied set
-	var goal_conditions: Dictionary[String, Variant] = goal.desired_state.duplicate()
-	var initial_unsatisfied := current_state.get_unsatisfied_conditions(goal_conditions)
+	var goal_conditions: Dictionary[StringName, Variant] = goal.desired_state.duplicate()
+	var initial_unsatisfied: Dictionary[StringName, Variant] = current_state.get_unsatisfied_conditions(goal_conditions)
 
 	if initial_unsatisfied.is_empty():
 		return []
 
 	var open_list: Array[PlanNode] = []
-	var closed_set: Dictionary[String, bool] = {}
+	var closed_set: Dictionary[StringName, bool] = {}
 
 	var start_h := _calculate_heuristic(initial_unsatisfied, usable_actions)
 	var start_node := PlanNode.new(initial_unsatisfied, null, null, 0.0, start_h)
@@ -122,13 +122,13 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 			if not action.satisfies_any(current.unsatisfied):
 				continue
 
-			var new_unsatisfied := action.regress_conditions(current.unsatisfied, current_state)
+			var new_unsatisfied: Dictionary[StringName, Variant] = action.regress_conditions(current.unsatisfied, current_state)
 			var new_state_key := _dict_to_key(new_unsatisfied)
 			if closed_set.has(new_state_key):
 				continue
 
-			var new_g := current.g_cost + action.cost
-			var new_h := _calculate_heuristic(new_unsatisfied, usable_actions)
+			var new_g: float = current.g_cost + action.cost
+			var new_h: float = _calculate_heuristic(new_unsatisfied, usable_actions)
 			var neighbor := PlanNode.new(new_unsatisfied, action, current, new_g, new_h)
 
 			# Check if we already have a better path to this state
@@ -155,14 +155,14 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 ## [br]
 ## Returns heuristic cost estimate (never overestimates).
 func _calculate_heuristic(
-	unsatisfied: Dictionary[String, Variant],
+	unsatisfied: Dictionary[StringName, Variant],
 	actions: Array[GOAPAction]
 ) -> float:
 	if unsatisfied.is_empty():
 		return 0.0
 
 	# Build a map of condition -> min cost to satisfy it
-	var condition_min_costs: Dictionary[String, float] = {}
+	var condition_min_costs: Dictionary[StringName, float] = {}
 	for key in unsatisfied:
 		condition_min_costs[key] = INF
 		var required_value: Variant = unsatisfied[key]
@@ -177,7 +177,7 @@ func _calculate_heuristic(
 	var max_h: float = 0.0
 
 	for action in actions:
-		var conditions_satisfied: Array[String] = []
+		var conditions_satisfied: Array[StringName] = []
 		for key in unsatisfied:
 			var required_value: Variant = unsatisfied[key]
 			if action.effects.has(key) and action.effects[key] == required_value:
@@ -225,10 +225,10 @@ func _get_lowest_cost_node(nodes: Array[PlanNode]) -> PlanNode:
 ## [param dict] Dictionary of condition key-value pairs.[br]
 ## [br]
 ## Returns MD5 hash of sorted key-value pairs.
-func _dict_to_key(dict: Dictionary[String, Variant]) -> String:
+func _dict_to_key(dict: Dictionary[StringName, Variant]) -> StringName:
 	var keys: Array = dict.keys()
 	keys.sort()
-	var parts: Array[String] = []
+	var parts: Array[StringName] = []
 	for key in keys:
 		parts.append("%s=%s" % [key, str(dict[key])])
 	return "|".join(parts).md5_text()
@@ -240,7 +240,7 @@ func _dict_to_key(dict: Dictionary[String, Variant]) -> String:
 ## [param state_key] Hash key to match.[br]
 ## [br]
 ## Returns matching node or [code]null[/code] if not found.
-func _find_node_with_key(nodes: Array[PlanNode], state_key: String) -> PlanNode:
+func _find_node_with_key(nodes: Array[PlanNode], state_key: StringName) -> PlanNode:
 	for node in nodes:
 		if node.get_state_key() == state_key:
 			return node

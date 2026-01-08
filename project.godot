@@ -30,10 +30,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
-GOAPPlanner="*res://systems/goap/planner.gd"
-ECSManager="*res://systems/ecs/manager.gd"
-SignalBus="*res://systems/goap/signal_bus.gd"
-WorldState="*res://systems/goap/world_state.gd"
+GOAPPlanner="*res://systems/goap/core/goap_planner.gd"
+GOAPOrchestrator="*res://systems/goap/core/goap_orchestrator.gd"
 
 [debug_draw_3d]
 

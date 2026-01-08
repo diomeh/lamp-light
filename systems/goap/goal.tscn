@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://c26n5xv5m1sdf"]
-
-[ext_resource type="Script" uid="uid://v4h8nmq4qp42" path="res://systems/goap/goal.gd" id="1_pji4e"]
-
-[node name="GOAPGoal" type="Node"]
-script = ExtResource("1_pji4e")

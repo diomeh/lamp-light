@@ -1,7 +1,6 @@
-## Dictionary-based state container for GOAP world state and blackboards.
+## Dictionary-based state container for GOAP state.
 ##
-## Provides type-safe key-value storage with helper methods for common operations.[br]
-## Used for both shared world state and per-agent blackboards.[br][br]
+## Provides type-safe key-value storage with helper methods for common operations.[br][br]
 ##
 ## [b]Usage:[/b]
 ## [codeblock]
@@ -12,34 +11,37 @@
 ##
 ## See also: [GOAPAgent], [GOAPPlanner]
 class_name GOAPState
-extends Node
+extends RefCounted
 
 ## Internal storage. Access via [method set_value], [method get_value], etc.
-var _data: Dictionary[String, Variant] = {}
+var _data: Dictionary[StringName, Variant] = {}
 
+signal state_changed(key: StringName, new_value: Variant, old_value: Variant)
 
 ## Creates new GOAPState, optionally initialized with data.[br][br]
 ##
 ## [param state] Initial key-value pairs to populate the state.
-func _init(state: Dictionary[String, Variant]={}):
+func _init(state: Dictionary[StringName, Variant]={}):
 	initialize(state)
 
 
 ## Initializes state with given data. Override for custom initialization.[br][br]
 ##
 ## [param state] Data to merge into internal storage.
-func initialize(state: Dictionary[String, Variant]) -> void:
+func initialize(state: Dictionary[StringName, Variant]) -> void:
 	append_raw(state)
 
 
 ## Sets a state variable. Only updates if value changed.[br][br]
 ##
 ## [param key] Variable name.[br]
-## [param value] New value to store.
-func set_value(key: String, value: Variant) -> void:
+## [param value] New value to store.[br]
+## Emits [signal GOAPState.state_changed] if value is modified.
+func set_value(key: StringName, value: Variant) -> void:
 	var old_value: Variant = _data.get(key)
 	if old_value != value:
 		_data[key] = value
+		state_changed.emit(key, value, old_value)
 
 
 ## Appends value to an array stored at key.[br][br]
@@ -49,7 +51,7 @@ func set_value(key: String, value: Variant) -> void:
 ##
 ## [param key] Variable name containing array.[br]
 ## [param value] Value to append.
-func append_value(key: String, value: Variant) -> void:
+func append_value(key: StringName, value: Variant) -> void:
 	var arr: Variant = _data.get(key)
 
 	if not arr:
@@ -67,7 +69,7 @@ func append_value(key: String, value: Variant) -> void:
 ## [param key] Variable name to retrieve.[br]
 ## [param default] Value returned if key doesn't exist.[br]
 ## Returns stored value or [param default].
-func get_value(key: String, default: Variant = null) -> Variant:
+func get_value(key: StringName, default: Variant = null) -> Variant:
 	return _data.get(key, default)
 
 
@@ -75,7 +77,7 @@ func get_value(key: String, default: Variant = null) -> Variant:
 ##
 ## [param key] Variable name to check.[br]
 ## Returns [code]true[/code] if key exists.
-func has_value(key: String) -> bool:
+func has_value(key: StringName) -> bool:
 	return _data.has(key)
 
 
@@ -83,7 +85,7 @@ func has_value(key: String) -> bool:
 ##
 ## [param key] Variable name to remove.[br]
 ## Returns [code]true[/code] if removed, [code]false[/code] if key didn't exist.
-func remove_value(key: String) -> bool:
+func erase_value(key: StringName) -> bool:
 	return _data.erase(key)
 
 
@@ -92,7 +94,7 @@ func remove_value(key: String) -> bool:
 ## Safe for modification. Use for planning, simulation, or serialization.[br][br]
 ##
 ## Returns copy of state data.
-func get_state_copy() -> Dictionary[String, Variant]:
+func to_dict() -> Dictionary[StringName, Variant]:
 	return _data.duplicate(true)
 
 
@@ -101,8 +103,16 @@ func get_state_copy() -> Dictionary[String, Variant]:
 ## [b]Warning:[/b] Modifications will affect this state. Use for read-only access.[br][br]
 ##
 ## Returns reference to internal data.
-func get_state_ref() -> Dictionary[String, Variant]:
+func to_ref() -> Dictionary[StringName, Variant]:
 	return _data
+
+
+## Creates a duplicate GOAPState with copied data.[br][br]
+##
+## Returns new [GOAPState] instance with same data.
+func duplicate() -> GOAPState:
+	var s = GOAPState.new(to_dict())
+	return s
 
 
 ## Replaces entire state with deep copy of new data.[br][br]
@@ -110,7 +120,7 @@ func get_state_ref() -> Dictionary[String, Variant]:
 ## [b]Warning:[/b] Overwrites all existing data. Use for loading saved states.[br][br]
 ##
 ## [param new_data] Dictionary to copy as new state.
-func set_state_dict(new_data: Dictionary[String, Variant]) -> void:
+func override(new_data: Dictionary[StringName, Variant]) -> void:
 	_data = new_data.duplicate(true)
 
 
@@ -124,7 +134,7 @@ func clear() -> void:
 ## [param conditions] Key-value pairs that must match.[br]
 ## [br]
 ## Returns [code]true[/code] if all conditions match, [code]false[/code] otherwise.
-func matches_conditions(conditions: Dictionary[String, Variant]) -> bool:
+func matches_conditions(conditions: Dictionary[StringName, Variant]) -> bool:
 	for key in conditions:
 		if not _data.has(key) or _data[key] != conditions[key]:
 			return false
@@ -137,7 +147,7 @@ func matches_conditions(conditions: Dictionary[String, Variant]) -> bool:
 ## [br]
 ## Returns [code]true[/code] if all entries in [param state] match.
 func matches_state(state: GOAPState) -> bool:
-	return matches_conditions(state.get_state_ref())
+	return matches_conditions(state.to_ref())
 
 
 ## Applies effects dictionary to this state.[br][br]
@@ -145,7 +155,7 @@ func matches_state(state: GOAPState) -> bool:
 ## Each key-value pair overwrites corresponding state variable.[br][br]
 ##
 ## [param effects] Changes to apply.
-func apply_effects(effects: Dictionary[String, Variant]) -> void:
+func apply_effects(effects: Dictionary[StringName, Variant]) -> void:
 	for key in effects:
 		set_value(key, effects[key])
 
@@ -156,7 +166,7 @@ func apply_effects(effects: Dictionary[String, Variant]) -> void:
 ##
 ## [param key] Variable name.[br]
 ## [param amount] Value to add (default 1.0).
-func increment(key: String, amount: float = 1.0) -> void:
+func increment(key: StringName, amount: float = 1.0) -> void:
 	var current = get_value(key, 0.0)
 
 	# Prevent adding incompatible types
@@ -172,14 +182,14 @@ func increment(key: String, amount: float = 1.0) -> void:
 ##
 ## [param key] Variable name.[br]
 ## [param amount] Value to subtract (default 1.0).
-func decrement(key: String, amount: float = 1.0) -> void:
+func decrement(key: StringName, amount: float = 1.0) -> void:
 	increment(key, amount * -1)
 
 
 ## Merges raw dictionary into state. Existing keys are overwritten.[br][br]
 ##
 ## [param state] Data to merge.
-func append_raw(state: Dictionary[String, Variant]) -> void:
+func append_raw(state: Dictionary[StringName, Variant]) -> void:
 	if state.is_empty():
 		return
 
@@ -190,7 +200,7 @@ func append_raw(state: Dictionary[String, Variant]) -> void:
 ##
 ## [param state] State to merge from.
 func append(state: GOAPState) -> void:
-	append_raw(state.get_state_ref())
+	append_raw(state.to_dict())
 
 
 ## Creates new state by merging two states.[br][br]
@@ -214,9 +224,9 @@ static func merge(a: GOAPState, b: GOAPState) -> GOAPState:
 ## [br]
 ## Returns dictionary of conditions where this state differs from required values.
 func get_unsatisfied_conditions(
-	conditions: Dictionary[String, Variant]
-) -> Dictionary[String, Variant]:
-	var unsatisfied: Dictionary[String, Variant] = {}
+	conditions: Dictionary[StringName, Variant]
+) -> Dictionary[StringName, Variant]:
+	var unsatisfied: Dictionary[StringName, Variant] = {}
 	for key in conditions:
 		var required_value: Variant = conditions[key]
 		var current_value: Variant = get_value(key)
