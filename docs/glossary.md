@@ -4,20 +4,22 @@ This glossary compiles all relevant technical and thematic terms, ideas, and con
 
 ## Table of Contents
 
-- [Technical terms](#technical-terms)
+- [Glossary](#glossary)
+  - [Table of Contents](#table-of-contents)
+  - [Technical terms](#technical-terms)
     - [GOAP (Goal-Oriented Action Planning)](#goap-goal-oriented-action-planning)
-        - [State](#state)
-        - [Agent](#agent)
-        - [Actions](#actions)
-        - [Goals](#goals)
-        - [Plans](#plans)
-        - [Planning](#planning)
+      - [State](#state)
+      - [Agent](#agent)
+      - [Actions](#actions)
+      - [Goals](#goals)
+    - [Plans](#plans)
+      - [Planning](#planning)
     - [ECS (Entity Component System)](#ecs-entity-component-system)
-        - [Entity](#entity)
-        - [Component](#component)
-        - [Manager](#manager)
+      - [Entity](#entity)
+      - [Component](#component)
+      - [Manager](#manager)
     - [Jolt Physics](#jolt-physics)
-- [Thematic terms](#thematic-terms)
+  - [Thematic terms](#thematic-terms)
 
 > [!NOTE]
 > Technical terms relate to the architecture and systems used in the development of LampLight, while thematic terms pertain to the lore, setting, and narrative elements within the game world.
@@ -39,6 +41,7 @@ A general representation of facts about the world or an agent, used for planning
 Defined as the `GOAPState` class, which acts as a typed dictionary wrapper with utility methods.
 
 The state is divided into two main parts:
+
 - **World State**: Represents shared information about the environment, accessible to all agents.
 - **Blackboard State**: Represents private information specific to an individual agent.
 
