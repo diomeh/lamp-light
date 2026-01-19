@@ -32,6 +32,7 @@ config/icon="res://icon.svg"
 PhantomCameraManager="*res://addons/phantom_camera/scripts/managers/phantom_camera_manager.gd"
 GOAPPlanner="*res://systems/goap/core/goap_planner.gd"
 GOAPOrchestrator="*res://systems/goap/core/goap_orchestrator.gd"
+ECSManager="*res://systems/ecs/manager.gd"
 
 [debug_draw_3d]
 
@@ -55,6 +56,10 @@ folder_colors={
 "res://tests/": "green",
 "res://vendor/": "gray"
 }
+
+[gdunit4]
+
+settings/test/test_lookup_folder="tests"
 
 [global_group]
 
