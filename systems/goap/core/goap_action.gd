@@ -4,26 +4,67 @@
 ## Used by [GOAPPlanner] to construct plans that achieve goals.[br][br]
 ##
 ## [b]Architecture:[/b][br]
-## - [member preconditions]: Conditions that must be true to use this action in a plan[br]
-## - [member effects]: State changes this action produces (symbolic)[br]
-## - [member cost]: Planning cost (lower = preferred)[br]
-## - Runtime execution via [method perform][br][br]
+## - [member preconditions]: [b]Symbolic[/b] conditions for planning (e.g., [code]{"has_axe": true}[/code])[br]
+## - [member effects]: [b]Symbolic[/b] state changes (e.g., [code]{"has_wood": true}[/code])[br]
+## - [member cost]: Planning cost (lower values preferred by planner)[br]
+## - [method can_execute]: [b]Runtime[/b] validation (e.g., distance checks, pathfinding)[br]
+## - [method execute]: Frame-by-frame execution logic[br][br]
 ##
-## [b]Usage:[/b]
+## [b]Action Author Contract:[/b][br][br]
+##
+## [b]1. Symbolic Planning ([member preconditions] / [member effects]):[/b][br]
+## These are used ONLY during planning to find valid action sequences.[br]
+## They represent abstract logical requirements, not runtime checks.[br]
+## Example: [code]{"near_tree": true}[/code] means logically positioned, not actual distance.[br][br]
+##
+## [b]2. Runtime Validation ([method can_execute]):[/b][br]
+## Override this to check if action can actually execute RIGHT NOW.[br]
+## Called by executor before [method enter]. Should be fast (no pathfinding).[br]
+## Example: Check if target still exists, agent has resources, etc.[br]
+## Returns [code]false[/code] to fail action immediately without entering.[br][br]
+##
+## [b]3. Action Lifecycle:[/b][br]
+## - [method enter]: One-time setup (start animations, reserve resources)[br]
+## - [method execute]: Called every frame until returns SUCCESS/FAILURE[br]
+## - [method exit]: Cleanup (stop animations, release resources)[br][br]
+##
+## [b]4. Blackboard Updates:[/b][br]
+## Actions MUST update [code]agent.blackboard[/code] during [method execute].[br]
+## Planner plans based on [member effects], but execution must apply real changes.[br]
+## Example: [code]agent.blackboard.set_value("has_wood", true)[/code][br][br]
+##
+## [b]Usage Example:[/b]
 ## [codeblock]
 ## extends GOAPAction
 ##
 ## func _init() -> void:
-##     action_name = "MoveTo"
-##     cost = 1.0
-##     preconditions = {"target_position": Vector3.ZERO}
-##     effects = {"at_target": true}
+##     action_name = "ChopTree"
+##     cost = 2.0
+##     # Symbolic: planner uses these to find action sequences
+##     preconditions = {"has_axe": true, "near_tree": true}
+##     effects = {"has_wood": true, "near_tree": false}
 ##
-## func perform(agent: GOAPAgent, delta: float) -> ExecResult:
-##     # Execute movement logic
-##     if reached_target():
+## func can_execute(state: Dictionary[StringName, Variant]) -> bool:
+##     # Runtime: can we actually do this RIGHT NOW?
+##     return state.get("axe_durability", 0) > 0
+##
+## func enter(agent: GOAPAgent) -> void:
+##     # Start chopping animation
+##     agent.actor.play_animation("chop")
+##
+## func execute(agent: GOAPAgent, delta: float) -> ExecResult:
+##     # Simulate chopping over time
+##     _chop_progress += delta
+##     if _chop_progress >= 3.0:
+##         # Update blackboard to reflect real world change
+##         agent.blackboard.set_value("has_wood", true)
+##         agent.blackboard.set_value("near_tree", false)
 ##         return ExecResult.SUCCESS
 ##     return ExecResult.RUNNING
+##
+## func exit(agent: GOAPAgent) -> void:
+##     # Stop animation
+##     agent.actor.stop_animation()
 ## [/codeblock]
 ## [br]
 ## See also: [GOAPAgent], [GOAPPlanner], [GOAPGoal]
@@ -36,12 +77,16 @@ extends Resource
 ## Planning cost. Lower values are preferred by the planner.
 @export var cost: float = 1.0
 
-## Symbolic conditions required to use this action in a plan.[br]
-## Example: [code]{"has_axe": true, "tree_nearby": true}[/code]
+## [b]Symbolic[/b] conditions required for planning.[br]
+## Used by planner to determine if action is usable in a plan.[br]
+## These are LOGICAL requirements, not runtime checks.[br]
+## Example: [code]{"has_axe": true, "near_tree": true}[/code]
 @export var preconditions: Dictionary[StringName, Variant] = {}
 
-## Symbolic state changes produced by this action.[br]
-## Example: [code]{"has_wood": true, "tree_nearby": false}[/code]
+## [b]Symbolic[/b] state changes for planning.[br]
+## Used by planner to determine what this action achieves.[br]
+## Your [method execute] must apply these changes to [code]agent.blackboard[/code].[br]
+## Example: [code]{"has_wood": true, "near_tree": false}[/code]
 @export var effects: Dictionary[StringName, Variant] = {}
 
 ## Action execution result states.
@@ -82,14 +127,20 @@ func get_effects(state: Dictionary[StringName, Variant]) -> Dictionary[StringNam
 	return effects
 
 
-## Checks if runtime preconditions are satisfied by the given state.[br][br]
+## [b]Runtime validation:[/b] Can this action execute RIGHT NOW?[br][br]
 ##
-## Override to implement runtime validation (e.g., path exists, target in range).[br]
-## This is separate from symbolic [member preconditions] used in planning.[br][br]
+## Override to check actual runtime conditions:[br]
+## - Does target still exist?[br]
+## - Are resources still available?[br]
+## - Is path still valid?[br]
+## - Any other real-world checks[br][br]
 ##
-## [param state] State to check against.[br]
+## This is separate from symbolic [member preconditions] (used in planning).[br]
+## Called by executor before [method enter]. Should be fast.[br][br]
+##
+## [param state] Current agent state to check against.[br]
 ## [br]
-## Returns [code]true[/code] if all [member preconditions] are met.
+## Returns [code]true[/code] if action can execute, [code]false[/code] to fail immediately.
 func can_execute(state: Dictionary[StringName, Variant]) -> bool:
 	for key in preconditions:
 		if not state.has(key) or state[key] != preconditions[key]:
@@ -110,10 +161,16 @@ func apply_effects(state: GOAPState) -> GOAPState:
 
 ## Executes action logic each frame.[br][br]
 ##
-## Override to implement action behavior. Return [constant ExecResult.RUNNING] while[br]
-## working, [constant ExecResult.SUCCESS] when done, or [constant ExecResult.FAILURE] if failed.[br][br]
+## Override to implement action behavior:[br]
+## - Return [constant ExecResult.RUNNING] while working[br]
+## - Return [constant ExecResult.SUCCESS] when done[br]
+## - Return [constant ExecResult.FAILURE] if failed[br][br]
 ##
-## [param agent] Agent performing this action.[br]
+## [b]IMPORTANT:[/b] You MUST update [code]agent.blackboard[/code] when action succeeds.[br]
+## Apply the changes described in [member effects] to the blackboard.[br]
+## Example: [code]agent.blackboard.set_value("has_wood", true)[/code][br][br]
+##
+## [param agent] Agent performing this action (access via [code]agent.blackboard[/code], [code]agent.actor[/code]).[br]
 ## [param delta] Time since last frame in seconds.[br]
 ## [br]
 ## Returns execution status.
@@ -124,7 +181,11 @@ func execute(agent: GOAPAgent, delta: float) -> ExecResult:
 
 ## Called once when action starts executing.[br][br]
 ##
-## Override for initialization (start animations, reserve resources, etc.).[br][br]
+## Override for one-time initialization:[br]
+## - Start animations[br]
+## - Reserve resources[br]
+## - Initialize internal state[br]
+## - Store references[br][br]
 ##
 ## [param agent] Agent starting this action.
 @warning_ignore("unused_parameter")
@@ -134,7 +195,12 @@ func enter(agent: GOAPAgent) -> void:
 
 ## Called once when action finishes or is interrupted.[br][br]
 ##
-## Override for cleanup (stop animations, release resources, etc.).[br][br]
+## Override for cleanup:[br]
+## - Stop animations[br]
+## - Release resources[br]
+## - Clear internal state[br][br]
+##
+## Called regardless of success or failure, always clean up here.[br][br]
 ##
 ## [param agent] Agent ending this action.
 @warning_ignore("unused_parameter")

@@ -48,6 +48,17 @@ signal plan_completed(goal: GOAPGoal)
 ## [param action] The action that failed.
 signal plan_aborted(goal: GOAPGoal, action: GOAPAction)
 
+## Emitted after planning with performance metrics.[br]
+## [param goal] The goal that was planned for.[br]
+## [param plan] The generated plan (empty if planning failed).[br]
+## [param planning_time_ms] Time taken for planning in milliseconds.
+signal plan_metrics(goal: GOAPGoal, plan: Array[GOAPAction], planning_time_ms: float)
+
+## Emitted when planning fails with diagnostic information.[br]
+## [param goal] The goal that couldn't be planned.[br]
+## [param failure_reason] Human-readable reason for failure.
+signal plan_debug(goal: GOAPGoal, failure_reason: String)
+
 ## Available actions for planning.
 @export var actions: Array[GOAPAction] = []
 
@@ -115,8 +126,6 @@ func _exit_tree() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# Only self-drive during PERFORMING state
-	# IDLE and PLANNING are handled by GOAPOrchestrator
 	if _state == State.PERFORMING:
 		_process_performing(delta)
 
@@ -192,9 +201,22 @@ func _process_planning() -> void:
 		_state = State.IDLE
 		return
 
-	var plan := GOAPPlanner.plan(self)
+	# Snapshot blackboard to prevent race conditions during planning
+	var plan_start := Time.get_ticks_usec()
+	var plan := GOAPPlanner.plan(blackboard.duplicate(), actions, current_goal)
+	var plan_time_ms := (Time.get_ticks_usec() - plan_start) / 1000.0
+
+	# Emit metrics for monitoring
+	plan_metrics.emit(current_goal, plan, plan_time_ms)
 
 	if plan.is_empty():
+		var reason := "No valid action sequence found"
+		if actions.is_empty():
+			reason = "No actions available"
+		elif not current_goal.is_relevant(blackboard.to_ref()):
+			reason = "Goal not relevant"
+		plan_debug.emit(current_goal, reason)
+
 		plan_failed.emit(current_goal)
 		_reset_to_idle()
 	else:
@@ -266,3 +288,11 @@ func _complete_goal() -> void:
 func _reset_to_idle() -> void:
 	current_goal = null
 	_state = State.IDLE
+
+
+func get_goals() -> Array[GOAPGoal]:
+	return goals.duplicate()
+
+
+func get_actions() -> Array[GOAPAction]:
+	return actions.duplicate()

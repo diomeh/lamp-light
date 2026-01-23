@@ -1,7 +1,7 @@
-## GOAP planner using backward (regressive) A* search.
+## GOAP planner autoload using backward (regressive) A* search.
 ##
-## Plans by working backwards from goal state to find actions that satisfy
-## unsatisfied conditions. Uses an admissible heuristic for optimal plans.[br][br]
+## Provides autoload singleton access to planning algorithm.[br]
+## All planning methods are and do not require scene tree access.[br][br]
 ##
 ## [b]Algorithm:[/b] Backward A* with state-space regression[br]
 ## [b]Complexity:[/b] O(b^d) where b = branching factor, d = plan depth[br][br]
@@ -9,12 +9,12 @@
 ## [b]Usage:[/b]
 ## [codeblock]
 ## # Called automatically by GOAPAgent, but can be used directly:
-## var plan: Array[GOAPAction] = GOAPPlanner.plan(agent)
+## var plan: Array[GOAPAction] = GOAPPlanner.plan(state, actions, goal)
 ## if plan.is_empty():
 ##     print("No valid plan found!")
 ## [/codeblock]
 ## [br]
-## See also: [GOAPAgent], [GOAPAction]
+## See also: [GOAPAgent], [GOAPAction], [GOAPGoal]
 extends Node
 
 
@@ -63,35 +63,28 @@ class PlanNode:
 		return "|".join(parts).md5_text()
 
 
-## Creates optimal action plan for agent's current goal.[br][br]
+## Creates optimal action plan for a goal.[br][br]
 ##
-## Uses backward A* search starting from [member GOAPGoal.desired_state],
+## Uses backward A* search starting from [param goal]'s desired state,
 ## finding actions whose effects satisfy unsatisfied conditions.[br][br]
 ##
-## [b]Architecture:[/b] Planning uses ONLY the agent's Blackboard (beliefs),
+## [b]Architecture:[/b] Planning uses ONLY the provided state (beliefs),
 ## never WorldState (truth). Plans are based on what the agent believes,
 ## which may be incomplete, stale, or incorrect.[br][br]
 ##
-## [param agent] Agent to plan for (provides actions, goals, and blackboard).[br]
+## [param current_state] Current belief state to plan from.[br]
+## [param available_actions] Actions available for planning.[br]
+## [param goal] Goal to achieve.[br]
 ## [br]
 ## Returns actions in execution order, or empty array if no plan exists.
-func plan(agent: GOAPAgent) -> Array[GOAPAction]:
-	var available_actions: Array[GOAPAction] = agent.actions
-	var current_state: GOAPState = agent.blackboard
-	var goal: GOAPGoal = agent.current_goal
-
+func plan(
+	current_state: GOAPState,
+	available_actions: Array[GOAPAction],
+	goal: GOAPGoal
+) -> Array[GOAPAction]:
 	var usable_actions := available_actions
-	# FIXME: this check is problematic here,
-	# runtime conditions for the action should checked when symbolic state allows for it.
-	# Doing it here means we prune actions that satisfy early plan requirementes.
-	# Filter actions that can be performed at runtime
-	#var usable_actions: Array[GOAPAction] = []
-	#for action in available_actions:
-		#if action.can_perform(agent):
-			#usable_actions.append(action)
 
-	# Start with goal's desired state as unsatisfied conditions
-	# Only check current_state once at the start to determine initial unsatisfied set
+	var effect_index := _build_effect_index(usable_actions)
 	var goal_conditions: Dictionary[StringName, Variant] = goal.desired_state.duplicate()
 	var initial_unsatisfied: Dictionary[StringName, Variant] = current_state.get_unsatisfied_conditions(goal_conditions)
 
@@ -118,10 +111,10 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 		if current.unsatisfied.is_empty():
 			return _reconstruct_plan(current)
 
-		for action in usable_actions:
-			if not action.satisfies_any(current.unsatisfied):
-				continue
+		# Get relevant actions from index instead of iterating all
+		var relevant_actions := _get_relevant_actions(current.unsatisfied, effect_index, usable_actions)
 
+		for action in relevant_actions:
 			var new_unsatisfied: Dictionary[StringName, Variant] = action.regress_conditions(current.unsatisfied, current_state)
 			var new_state_key := _dict_to_key(new_unsatisfied)
 			if closed_set.has(new_state_key):
@@ -140,7 +133,6 @@ func plan(agent: GOAPAgent) -> Array[GOAPAction]:
 				open_list.erase(existing)
 				open_list.append(neighbor)
 
-	# No plan found
 	return []
 
 
@@ -161,7 +153,6 @@ func _calculate_heuristic(
 	if unsatisfied.is_empty():
 		return 0.0
 
-	# Build a map of condition -> min cost to satisfy it
 	var condition_min_costs: Dictionary[StringName, float] = {}
 	for key in unsatisfied:
 		condition_min_costs[key] = INF
@@ -184,7 +175,6 @@ func _calculate_heuristic(
 				conditions_satisfied.append(key)
 
 		if conditions_satisfied.size() > 1:
-			# This action satisfies multiple conditions - use max for admissibility
 			for key in conditions_satisfied:
 				max_h = max(max_h, action.cost)
 
@@ -245,6 +235,49 @@ func _find_node_with_key(nodes: Array[PlanNode], state_key: StringName) -> PlanN
 		if node.get_state_key() == state_key:
 			return node
 	return null
+
+
+## Builds index mapping effect keys to actions that produce them.[br][br]
+##
+## [param actions] Actions to index.[br]
+## [br]
+## Returns dictionary mapping effect keys to arrays of actions.
+func _build_effect_index(actions: Array[GOAPAction]) -> Dictionary:
+	var index: Dictionary = {}  # StringName -> Array[GOAPAction]
+	for action in actions:
+		for key in action.effects:
+			if not index.has(key):
+				index[key] = []
+			index[key].append(action)
+	return index
+
+
+## Gets actions relevant to unsatisfied conditions using effect index.[br][br]
+##
+## [param unsatisfied] Conditions needing satisfaction.[br]
+## [param effect_index] Prebuilt effect-to-actions mapping.[br]
+## [param all_actions] Fallback if condition not in index.[br]
+## [br]
+## Returns deduplicated array of relevant actions.
+func _get_relevant_actions(
+	unsatisfied: Dictionary[StringName, Variant],
+	effect_index: Dictionary,
+	all_actions: Array[GOAPAction]
+) -> Array[GOAPAction]:
+	var relevant: Dictionary = {}  # Use dict for deduplication
+
+	for key in unsatisfied:
+		if effect_index.has(key):
+			for action in effect_index[key]:
+				relevant[action] = true
+
+	if relevant.is_empty():
+		return all_actions
+
+	var result: Array[GOAPAction] = []
+	for action in relevant:
+		result.append(action)
+	return result
 
 
 ## Reconstructs action sequence from completed search.[br][br]

@@ -19,6 +19,10 @@
 ## See also: [GOAPAgent], [GOAPPlanner]
 extends Node
 
+## Emitted when a new agent registers.[br]
+## [param agent] The agent that registered.
+signal agent_registered(agent: GOAPAgent)
+
 ## Maximum milliseconds per frame for agent thinking.[br]
 ## Prevents frame spikes when many agents need planning.
 @export var think_budget_ms: float = 4.0
@@ -53,6 +57,7 @@ func register_agent(agent: GOAPAgent) -> void:
 
 	_agents.append(agent)
 	_agent_last_think[agent] = -min_think_interval  # Allow immediate first think
+	agent_registered.emit(agent)
 
 
 ## Unregisters an agent from orchestration.[br][br]
@@ -86,28 +91,30 @@ func _process_agents() -> void:
 	var agents_checked := 0
 
 	while agents_checked < _agents.size():
-		# Check budget
 		var elapsed := Time.get_ticks_usec() - start_time
 		if elapsed >= budget_usec:
 			break
 
-		# Advance round-robin
 		_current_index = (_current_index + 1) % _agents.size()
 		var agent := _agents[_current_index]
 		agents_checked += 1
 
-		# Check if agent is due for thinking
 		var last_think: float = _agent_last_think.get(agent, 0.0)
-		if current_time - last_think < min_think_interval:
+		var agent_priority: float = agent.get_think_priority()
+		var adjusted_interval: float = min_think_interval / max(agent_priority, 0.1)
+		if current_time - last_think < adjusted_interval:
 			continue
 
-		# Check if agent needs thinking
 		if not agent.needs_thinking():
 			continue
 
-		# Think
+		var plan_start := Time.get_ticks_usec()
 		agent.think()
+		var plan_elapsed := Time.get_ticks_usec() - plan_start
 		_agent_last_think[agent] = current_time
+
+		if plan_elapsed > budget_usec * 0.8:
+			break
 
 
 ## Clears all registered agents.[br][br]

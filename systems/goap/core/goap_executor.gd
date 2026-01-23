@@ -104,7 +104,6 @@ func tick(agent: GOAPAgent, delta: float) -> void:
 	if not _is_running:
 		return
 
-	# Start next action if needed
 	if _current_action == null:
 		if _current_index >= _plan.size():
 			_complete()
@@ -113,13 +112,16 @@ func tick(agent: GOAPAgent, delta: float) -> void:
 		_current_action = _plan[_current_index]
 		_action_entered = false
 
-	# Enter action on first tick
 	if not _action_entered:
+		if not _current_action.can_execute(agent.blackboard.to_ref()):
+			_finish_action(agent, GOAPAction.ExecResult.FAILURE)
+			_fail()
+			return
+
 		_current_action.enter(agent)
 		_action_entered = true
 		action_started.emit(_current_action)
 
-	# Execute action
 	var result := _current_action.execute(agent, delta)
 
 	match result:
