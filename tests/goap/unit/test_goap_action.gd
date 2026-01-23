@@ -155,7 +155,7 @@ func test_can_execute_wrong_value_returns_false() -> void:
 
 func test_apply_effects_creates_new_state() -> void:
 	# Arrange
-	var initial := GOAPState.new({&"original": true})
+	var initial := GOAPTestHelper.create_state({&"original": true})
 	_action.effects = {&"new_effect": true}
 
 	# Act
@@ -169,7 +169,7 @@ func test_apply_effects_creates_new_state() -> void:
 
 func test_apply_effects_overwrites_existing_values() -> void:
 	# Arrange
-	var initial := GOAPState.new({&"status": "waiting"})
+	var initial := GOAPTestHelper.create_state({&"status": "waiting"})
 	_action.effects = {&"status": "complete"}
 
 	# Act
@@ -181,7 +181,7 @@ func test_apply_effects_overwrites_existing_values() -> void:
 
 func test_apply_effects_preserves_unaffected_values() -> void:
 	# Arrange
-	var initial := GOAPState.new({&"health": 100, &"mana": 50})
+	var initial := GOAPTestHelper.create_state({&"health": 100, &"mana": 50})
 	_action.effects = {&"mana": 100}  # Only changes mana
 
 	# Act
@@ -339,7 +339,7 @@ func test_regress_with_state_filters_already_satisfied() -> void:
 	var unsatisfied: Dictionary[StringName, Variant] = {&"has_wood": true}
 
 	# State already has axe
-	var state := GOAPState.new({&"has_axe": true})
+	var state := GOAPTestHelper.create_state({&"has_axe": true})
 
 	# Act
 	var result := _action.regress_conditions(unsatisfied, state)

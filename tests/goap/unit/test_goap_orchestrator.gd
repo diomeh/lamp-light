@@ -40,6 +40,14 @@ class MockAgent:
 
 
 var _orchestrator: Node
+var _created_agents: Array[GOAPAgent] = []
+
+
+## Creates a MockAgent and tracks it for cleanup.
+func _create_mock_agent() -> MockAgent:
+	var agent := MockAgent.new()
+	_created_agents.append(agent)
+	return agent
 
 
 func before_test() -> void:
@@ -47,12 +55,20 @@ func before_test() -> void:
 	_orchestrator = Node.new()
 	_orchestrator.set_script(load("res://systems/goap/core/goap_orchestrator.gd"))
 	_orchestrator.clear()
+	_created_agents.clear()
 
 
 func after_test() -> void:
 	_orchestrator.clear()
-	_orchestrator.queue_free()
-	_orchestrator = null
+	# Free all created agents to prevent orphan warnings
+	for agent in _created_agents:
+		if is_instance_valid(agent):
+			agent.free()
+	_created_agents.clear()
+	# Free orchestrator last (after agents are freed)
+	if _orchestrator:
+		_orchestrator.free()
+		_orchestrator = null
 
 
 # =============================================================================
@@ -61,7 +77,7 @@ func after_test() -> void:
 
 func test_register_agent_adds_to_list() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 
 	# Act
 	_orchestrator.register_agent(agent)
@@ -72,9 +88,9 @@ func test_register_agent_adds_to_list() -> void:
 
 func test_register_multiple_agents() -> void:
 	# Arrange
-	var agent1 := MockAgent.new()
-	var agent2 := MockAgent.new()
-	var agent3 := MockAgent.new()
+	var agent1 := _create_mock_agent()
+	var agent2 := _create_mock_agent()
+	var agent3 := _create_mock_agent()
 
 	# Act
 	_orchestrator.register_agent(agent1)
@@ -87,7 +103,7 @@ func test_register_multiple_agents() -> void:
 
 func test_register_same_agent_twice_ignored() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 
 	# Act
 	_orchestrator.register_agent(agent)
@@ -99,7 +115,7 @@ func test_register_same_agent_twice_ignored() -> void:
 
 func test_unregister_agent_removes_from_list() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 	_orchestrator.register_agent(agent)
 
 	# Act
@@ -111,7 +127,7 @@ func test_unregister_agent_removes_from_list() -> void:
 
 func test_unregister_nonexistent_agent_no_error() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 
 	# Act & Assert - should not throw
 	_orchestrator.unregister_agent(agent)
@@ -120,7 +136,7 @@ func test_unregister_nonexistent_agent_no_error() -> void:
 
 func test_get_agents_returns_copy() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 	_orchestrator.register_agent(agent)
 
 	# Act
@@ -138,7 +154,7 @@ func test_get_agents_returns_copy() -> void:
 func test_clear_removes_all_agents() -> void:
 	# Arrange
 	for i in range(5):
-		_orchestrator.register_agent(MockAgent.new())
+		_orchestrator.register_agent(_create_mock_agent())
 
 	# Act
 	_orchestrator.clear()
@@ -153,7 +169,7 @@ func test_clear_removes_all_agents() -> void:
 
 func test_newly_registered_agent_can_think_immediately() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 	agent._needs_thinking = true
 	_orchestrator.register_agent(agent)
 
@@ -170,7 +186,7 @@ func test_newly_registered_agent_can_think_immediately() -> void:
 
 func test_agent_not_needing_think_is_skipped() -> void:
 	# Arrange
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 	agent._needs_thinking = false
 	_orchestrator.register_agent(agent)
 
@@ -183,9 +199,9 @@ func test_agent_not_needing_think_is_skipped() -> void:
 
 func test_mixed_agents_only_thinking_ones_processed() -> void:
 	# Arrange
-	var thinking_agent := MockAgent.new()
+	var thinking_agent := _create_mock_agent()
 	thinking_agent._needs_thinking = true
-	var idle_agent := MockAgent.new()
+	var idle_agent := _create_mock_agent()
 	idle_agent._needs_thinking = false
 
 	_orchestrator.register_agent(thinking_agent)
@@ -211,7 +227,7 @@ func test_round_robin_cycles_through_agents() -> void:
 
 	var agents: Array[MockAgent] = []
 	for i in range(3):
-		var agent := MockAgent.new()
+		var agent := _create_mock_agent()
 		agent._needs_thinking = true
 		agents.append(agent)
 		_orchestrator.register_agent(agent)
@@ -234,7 +250,7 @@ func test_min_think_interval_prevents_rapid_thinking() -> void:
 	_orchestrator.think_budget_ms = 1000.0
 	_orchestrator.min_think_interval = 10.0  # 10 seconds - won't be reached
 
-	var agent := MockAgent.new()
+	var agent := _create_mock_agent()
 	agent._needs_thinking = true
 	_orchestrator.register_agent(agent)
 
@@ -261,7 +277,7 @@ func test_budget_limits_agents_per_frame() -> void:
 	# Add many agents
 	var agents: Array[MockAgent] = []
 	for i in range(100):
-		var agent := MockAgent.new()
+		var agent := _create_mock_agent()
 		agent._needs_thinking = true
 		agents.append(agent)
 		_orchestrator.register_agent(agent)
@@ -330,7 +346,7 @@ func test_handles_many_agents() -> void:
 	_orchestrator.min_think_interval = 0.0
 
 	for i in range(100):
-		var agent := MockAgent.new()
+		var agent := _create_mock_agent()
 		agent._needs_thinking = true
 		_orchestrator.register_agent(agent)
 
@@ -350,13 +366,13 @@ func test_dynamic_agent_add_remove() -> void:
 	_orchestrator.think_budget_ms = 100.0
 	_orchestrator.min_think_interval = 0.0
 
-	var persistent_agent := MockAgent.new()
+	var persistent_agent := _create_mock_agent()
 	persistent_agent._needs_thinking = true
 	_orchestrator.register_agent(persistent_agent)
 
 	# Act - add and remove agents dynamically
 	for i in range(10):
-		var temp_agent := MockAgent.new()
+		var temp_agent := _create_mock_agent()
 		_orchestrator.register_agent(temp_agent)
 		_orchestrator._process_agents()
 		_orchestrator.unregister_agent(temp_agent)

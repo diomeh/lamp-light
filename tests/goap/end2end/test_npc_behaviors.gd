@@ -16,7 +16,7 @@ class TestNPC:
 	extends GOAPAgent
 
 	func _init() -> void:
-		blackboard = GOAPState.new()
+		blackboard = GOAPTestHelper.create_state()
 
 	## Simulates a physics frame for the agent.
 	func simulate_frame(delta: float) -> void:
@@ -88,7 +88,9 @@ func before_test() -> void:
 
 
 func after_test() -> void:
-	_npc = null
+	if _npc:
+		_npc.free()
+		_npc = null
 
 
 # =============================================================================
@@ -138,7 +140,7 @@ func test_e2e_hunger_food_eat_cycle() -> void:
 	## This tests a complete survival behavior loop.
 
 	# Arrange - NPC is hungry
-	_npc.blackboard = GOAPState.new({
+	_npc.blackboard = GOAPTestHelper.create_state({
 		&"hunger": 80,
 		&"has_food": false
 	})
@@ -181,7 +183,7 @@ func test_e2e_repeated_hunger_cycle() -> void:
 	## Scenario: NPC completes hunger cycle, then hunger returns, cycle repeats.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new({&"hunger": 50})
+	_npc.blackboard = GOAPTestHelper.create_state({&"hunger": 50})
 
 	var survive_goal := _create_tracked_goal(&"Survive", {&"hunger": 0}, 10.0)
 	survive_goal.relevance_func = func(state) -> bool:
@@ -221,7 +223,7 @@ func test_e2e_gather_resources_craft_item() -> void:
 	## Scenario: NPC gathers resources and crafts an item.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new({
+	_npc.blackboard = GOAPTestHelper.create_state({
 		&"wood": 0,
 		&"stone": 0,
 		&"has_tool": false
@@ -273,7 +275,7 @@ func test_e2e_urgent_goal_interrupts_low_priority() -> void:
 	## so this tests priority selection between goal cycles.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new({
+	_npc.blackboard = GOAPTestHelper.create_state({
 		&"has_gold": false,
 		&"is_safe": true
 	})
@@ -314,7 +316,7 @@ func test_e2e_complex_crafting_chain() -> void:
 	## Scenario: NPC builds a house requiring multiple crafting steps.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new({
+	_npc.blackboard = GOAPTestHelper.create_state({
 		&"has_axe": false,
 		&"has_wood": false,
 		&"has_planks": false,
@@ -350,7 +352,7 @@ func test_e2e_impossible_goal_graceful_handling() -> void:
 	## Scenario: NPC has goal but no way to achieve it.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new()
+	_npc.blackboard = GOAPTestHelper.create_state()
 
 	var impossible := _create_tracked_goal(&"Impossible", {&"magic": true})
 	var possible := _create_tracked_goal(&"Possible", {&"done": true}, 0.5)
@@ -380,7 +382,7 @@ func test_e2e_dynamic_priority_based_on_state() -> void:
 	## Scenario: Goal priority changes based on agent state.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new({
+	_npc.blackboard = GOAPTestHelper.create_state({
 		&"health": 100,
 		&"gold": 0,
 		&"healed": false,
@@ -430,7 +432,7 @@ func test_e2e_many_actions_performance() -> void:
 	## Scenario: Agent with many available actions can still plan quickly.
 
 	# Arrange
-	_npc.blackboard = GOAPState.new()
+	_npc.blackboard = GOAPTestHelper.create_state()
 	var goal := _create_tracked_goal(&"Target", {&"target": true})
 	_npc.goals = [goal]
 

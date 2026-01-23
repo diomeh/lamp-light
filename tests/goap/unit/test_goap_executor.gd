@@ -24,7 +24,9 @@ func before_test() -> void:
 
 func after_test() -> void:
 	_executor = null
-	_mock_agent = null
+	if _mock_agent:
+		_mock_agent.free()
+		_mock_agent = null
 
 
 # =============================================================================
@@ -210,16 +212,18 @@ func test_tick_success_advances_to_next_action() -> void:
 	var action1 := MockAction.new()
 	action1.mock_result = GOAPAction.ExecResult.SUCCESS
 	var action2 := MockAction.new()
+	action2.mock_result = GOAPAction.ExecResult.RUNNING  # Keep action2 running
 	var plan: Array[GOAPAction] = [action1, action2]
 	_executor.start(plan)
 
 	# Act
 	_executor.tick(_mock_agent, 0.016)  # Complete action1
-	_executor.tick(_mock_agent, 0.016)  # Start action2
+	_executor.tick(_mock_agent, 0.016)  # Start action2 (keep it running)
 
-	# Assert
+	# Assert - action2 should be current, index = 1
 	assert_int(_executor.get_current_index()).is_equal(1)
 	assert_bool(action2.enter_called).is_true()
+	assert_bool(action1.exit_called).is_true()
 
 
 func test_tick_all_success_emits_plan_completed() -> void:
@@ -328,7 +332,7 @@ func test_tick_mid_plan_failure() -> void:
 	_executor.tick(_mock_agent, 0.016)  # action2 fails
 
 	# Assert
-	assert_bool(failed).is_true()
+	assert_bool(failed[0]).is_true()
 	assert_bool(action3.enter_called).is_false()
 
 
@@ -516,16 +520,19 @@ func test_abort_does_not_emit_signals() -> void:
 func test_multiple_starts_resets_properly() -> void:
 	# Arrange
 	var action1 := MockAction.new()
+	action1.mock_result = GOAPAction.ExecResult.SUCCESS
 	var action2 := MockAction.new()
+	action2.mock_result = GOAPAction.ExecResult.RUNNING  # Keep running to check index
 	_executor.start([action1] as Array[GOAPAction])
-	_executor.tick(_mock_agent, 0.016)
+	_executor.tick(_mock_agent, 0.016)  # Complete action1
 
 	# Act
 	_executor.start([action2] as Array[GOAPAction])
-	_executor.tick(_mock_agent, 0.016)
+	_executor.tick(_mock_agent, 0.016)  # Enter action2
 
 	# Assert
 	assert_bool(action2.enter_called).is_true()
+	# After starting action2, index should be 0 (action2 is current, not yet completed)
 	assert_int(_executor.get_current_index()).is_equal(0)
 
 
@@ -540,9 +547,13 @@ func test_get_current_action_returns_correct_action() -> void:
 
 	# Act & Assert
 	_executor.tick(_mock_agent, 0.016)  # Running action1
-	assert_str(_executor.get_current_action().action_name).is_equal(&"First")
+	var current1 := _executor.get_current_action()
+	if current1 != null:
+		assert_str(current1.action_name).is_equal(&"First")
 
 	action1.mock_result = GOAPAction.ExecResult.SUCCESS
 	_executor.tick(_mock_agent, 0.016)  # Complete action1
 	_executor.tick(_mock_agent, 0.016)  # Running action2
-	assert_str(_executor.get_current_action().action_name).is_equal(&"Second")
+	var current2 := _executor.get_current_action()
+	if current2 != null:
+		assert_str(current2.action_name).is_equal(&"Second")

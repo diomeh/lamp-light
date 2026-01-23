@@ -17,7 +17,12 @@ class LifecycleTestAgent:
 	extends GOAPAgent
 
 	func _init() -> void:
-		blackboard = GOAPState.new()
+		blackboard = GOAPTestHelper.create_state()
+
+	## Override to set up signals without scene tree
+	func _setup_for_test() -> void:
+		_executor.plan_completed.connect(_on_executor_plan_completed)
+		_executor.plan_failed.connect(_on_executor_plan_failed)
 
 
 var _agent: LifecycleTestAgent
@@ -25,27 +30,17 @@ var _agent: LifecycleTestAgent
 
 func before_test() -> void:
 	_agent = LifecycleTestAgent.new()
+	_agent._setup_for_test()
 
 
 func after_test() -> void:
-	_agent = null
+	if _agent:
+		_agent.free()
+		_agent = null
 
-
-# =============================================================================
-# HELPERS
-# =============================================================================
-
-func _create_goal(goal_name: StringName, desired: Dictionary[StringName, Variant], priority: float = 1.0) -> GOAPGoal:
-	var goal := GOAPGoal.new()
-	goal.goal_name = goal_name
-	goal.desired_state = desired
-	goal.priority = priority
-	return goal
-
-
-func _create_action(action_name: StringName, preconds: Dictionary[StringName, Variant], effects: Dictionary[StringName, Variant]) -> MockAction:
-	var action := MockAction.create_succeeding(action_name, preconds, effects)
-	return action
+	# Clean up orchestrator registration
+	if GOAPOrchestrator:
+		GOAPOrchestrator.clear()
 
 
 # =============================================================================
@@ -56,8 +51,8 @@ func test_lifecycle_idle_to_performing() -> void:
 	## Scenario: Agent transitions from IDLE through PLANNING to PERFORMING.
 
 	# Arrange
-	_agent.goals = [_create_goal(&"Goal", {&"done": true})]
-	_agent.actions = [_create_action(&"DoIt", {}, {&"done": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Goal", {&"done": true})]
+	_agent.actions = [MockAction.create_succeeding(&"DoIt", {}, {&"done": true})]
 
 	# Assert initial state
 	assert_int(_agent.get_state()).is_equal(GOAPAgent.State.IDLE)
@@ -74,8 +69,8 @@ func test_lifecycle_complete_simple_goal() -> void:
 	## Scenario: Complete a simple single-action goal.
 
 	# Arrange
-	var goal := _create_goal(&"SimpleGoal", {&"target": true})
-	var action := _create_action(&"Achieve", {}, {&"target": true})
+	var goal := GOAPTestHelper.create_mock_goal(&"SimpleGoal", {&"target": true})
+	var action := MockAction.create_succeeding(&"Achieve", {}, {&"target": true})
 
 	_agent.goals = [goal]
 	_agent.actions = [action]
@@ -97,12 +92,12 @@ func test_lifecycle_multi_step_goal() -> void:
 	## Scenario: Complete a multi-step goal.
 
 	# Arrange
-	_agent.blackboard = GOAPState.new()
-	_agent.goals = [_create_goal(&"MultiStep", {&"step3": true})]
+	_agent.blackboard = GOAPTestHelper.create_state()
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"MultiStep", {&"step3": true})]
 	_agent.actions = [
-		_create_action(&"Step1", {}, {&"step1": true}),
-		_create_action(&"Step2", {&"step1": true}, {&"step2": true}),
-		_create_action(&"Step3", {&"step2": true}, {&"step3": true})
+		MockAction.create_succeeding(&"Step1", {}, {&"step1": true}),
+		MockAction.create_succeeding(&"Step2", {&"step1": true}, {&"step2": true}),
+		MockAction.create_succeeding(&"Step3", {&"step2": true}, {&"step3": true})
 	]
 
 	var completed := {"value": false}
@@ -130,14 +125,14 @@ func test_lifecycle_selects_highest_priority() -> void:
 
 	# Arrange
 	_agent.goals = [
-		_create_goal(&"Low", {&"low": true}, 1.0),
-		_create_goal(&"High", {&"high": true}, 10.0),
-		_create_goal(&"Med", {&"med": true}, 5.0)
+		GOAPTestHelper.create_mock_goal(&"Low", {&"low": true}, 1.0),
+		GOAPTestHelper.create_mock_goal(&"High", {&"high": true}, 10.0),
+		GOAPTestHelper.create_mock_goal(&"Med", {&"med": true}, 5.0)
 	]
 	_agent.actions = [
-		_create_action(&"GetLow", {}, {&"low": true}),
-		_create_action(&"GetHigh", {}, {&"high": true}),
-		_create_action(&"GetMed", {}, {&"med": true})
+		MockAction.create_succeeding(&"GetLow", {}, {&"low": true}),
+		MockAction.create_succeeding(&"GetHigh", {}, {&"high": true}),
+		MockAction.create_succeeding(&"GetMed", {}, {&"med": true})
 	]
 
 	var selected_goal := {"goal": null}
@@ -156,13 +151,13 @@ func test_lifecycle_skips_achieved_selects_next() -> void:
 	# Arrange
 	_agent.blackboard.set_value(&"high", true)  # Already achieved
 	_agent.goals = [
-		_create_goal(&"Low", {&"low": true}, 1.0),
-		_create_goal(&"High", {&"high": true}, 10.0),  # Achieved
-		_create_goal(&"Med", {&"med": true}, 5.0)
+		GOAPTestHelper.create_mock_goal(&"Low", {&"low": true}, 1.0),
+		GOAPTestHelper.create_mock_goal(&"High", {&"high": true}, 10.0),  # Achieved
+		GOAPTestHelper.create_mock_goal(&"Med", {&"med": true}, 5.0)
 	]
 	_agent.actions = [
-		_create_action(&"GetLow", {}, {&"low": true}),
-		_create_action(&"GetMed", {}, {&"med": true})
+		MockAction.create_succeeding(&"GetLow", {}, {&"low": true}),
+		MockAction.create_succeeding(&"GetMed", {}, {&"med": true})
 	]
 
 	var selected_goal := {"goal": null}
@@ -183,7 +178,7 @@ func test_lifecycle_planning_failure_returns_idle() -> void:
 	## Scenario: When planning fails, agent returns to IDLE.
 
 	# Arrange
-	_agent.goals = [_create_goal(&"Impossible", {&"impossible": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Impossible", {&"impossible": true})]
 	_agent.actions = []  # No actions = no plan
 
 	var plan_failed := {"value": false}
@@ -208,7 +203,7 @@ func test_lifecycle_action_failure_aborts_plan() -> void:
 	# Arrange
 	var failing_action := MockAction.create_failing(&"Failing")
 
-	_agent.goals = [_create_goal(&"Goal", {&"done": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Goal", {&"done": true})]
 	_agent.actions = [failing_action]
 	# Override effects so planner accepts it
 	failing_action.effects = {&"done": true}
@@ -235,7 +230,7 @@ func test_lifecycle_calls_after_plan_complete() -> void:
 	# Arrange
 	var mock_goal := MockGoal.create_simple(&"Goal", {&"done": true})
 	_agent.goals = [mock_goal]
-	_agent.actions = [_create_action(&"Do", {}, {&"done": true})]
+	_agent.actions = [MockAction.create_succeeding(&"Do", {}, {&"done": true})]
 
 	# Act
 	_agent.think()
@@ -256,7 +251,7 @@ func test_lifecycle_abort_returns_to_idle() -> void:
 	# Arrange
 	var slow_action := MockAction.create_delayed(&"Slow", 10)
 	slow_action.effects = {&"done": true}
-	_agent.goals = [_create_goal(&"Goal", {&"done": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Goal", {&"done": true})]
 	_agent.actions = [slow_action]
 
 	_agent.think()
@@ -276,7 +271,7 @@ func test_lifecycle_abort_emits_signal() -> void:
 	# Arrange
 	var slow_action := MockAction.create_delayed(&"Slow", 10)
 	slow_action.effects = {&"done": true}
-	var goal := _create_goal(&"Goal", {&"done": true})
+	var goal := GOAPTestHelper.create_mock_goal(&"Goal", {&"done": true})
 	_agent.goals = [goal]
 	_agent.actions = [slow_action]
 
@@ -303,7 +298,7 @@ func test_lifecycle_early_completion_by_external_change() -> void:
 	# Arrange
 	var slow_action := MockAction.create_delayed(&"Slow", 10)
 	slow_action.effects = {&"done": true}
-	var goal := _create_goal(&"Goal", {&"done": true})
+	var goal := GOAPTestHelper.create_mock_goal(&"Goal", {&"done": true})
 	_agent.goals = [goal]
 	_agent.actions = [slow_action]
 
@@ -331,12 +326,12 @@ func test_lifecycle_consecutive_goals() -> void:
 
 	# Arrange
 	_agent.goals = [
-		_create_goal(&"First", {&"first": true}, 10.0),
-		_create_goal(&"Second", {&"second": true}, 5.0)
+		GOAPTestHelper.create_mock_goal(&"First", {&"first": true}, 10.0),
+		GOAPTestHelper.create_mock_goal(&"Second", {&"second": true}, 5.0)
 	]
 	_agent.actions = [
-		_create_action(&"DoFirst", {}, {&"first": true}),
-		_create_action(&"DoSecond", {}, {&"second": true})
+		MockAction.create_succeeding(&"DoFirst", {}, {&"first": true}),
+		MockAction.create_succeeding(&"DoSecond", {}, {&"second": true})
 	]
 
 	var goals_completed: Array[StringName] = []
@@ -373,8 +368,8 @@ func test_lifecycle_dynamic_priority_selection() -> void:
 
 	_agent.goals = [base_goal, dynamic_goal]
 	_agent.actions = [
-		_create_action(&"DoBase", {}, {&"base": true}),
-		_create_action(&"DoDynamic", {}, {&"dynamic": true})
+		MockAction.create_succeeding(&"DoBase", {}, {&"base": true}),
+		MockAction.create_succeeding(&"DoDynamic", {}, {&"dynamic": true})
 	]
 
 	var selected := {"goal": null}
@@ -402,8 +397,8 @@ func test_lifecycle_irrelevant_goals_skipped() -> void:
 
 	_agent.goals = [irrelevant, relevant]
 	_agent.actions = [
-		_create_action(&"DoX", {}, {&"x": true}),
-		_create_action(&"DoY", {}, {&"y": true})
+		MockAction.create_succeeding(&"DoX", {}, {&"x": true}),
+		MockAction.create_succeeding(&"DoY", {}, {&"y": true})
 	]
 
 	var selected := {"goal": null}
@@ -425,12 +420,12 @@ func test_lifecycle_blackboard_persists_across_goals() -> void:
 
 	# Arrange
 	_agent.goals = [
-		_create_goal(&"First", {&"first": true}, 10.0),
-		_create_goal(&"Second", {&"second": true}, 5.0)
+		GOAPTestHelper.create_mock_goal(&"First", {&"first": true}, 10.0),
+		GOAPTestHelper.create_mock_goal(&"Second", {&"second": true}, 5.0)
 	]
 	_agent.actions = [
-		_create_action(&"DoFirst", {}, {&"first": true}),
-		_create_action(&"DoSecond", {}, {&"second": true})
+		MockAction.create_succeeding(&"DoFirst", {}, {&"first": true}),
+		MockAction.create_succeeding(&"DoSecond", {}, {&"second": true})
 	]
 
 	# Act - complete first goal
@@ -460,7 +455,7 @@ func test_lifecycle_no_goals_stays_idle() -> void:
 
 	# Arrange
 	_agent.goals = []
-	_agent.actions = [_create_action(&"Unused", {}, {})]
+	_agent.actions = [MockAction.create_succeeding(&"Unused", {}, {})]
 
 	# Act
 	_agent.think()
@@ -474,7 +469,7 @@ func test_lifecycle_all_goals_achieved_stays_idle() -> void:
 
 	# Arrange
 	_agent.blackboard.set_value(&"done", true)
-	_agent.goals = [_create_goal(&"Only", {&"done": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Only", {&"done": true})]
 	_agent.actions = []
 
 	# Act

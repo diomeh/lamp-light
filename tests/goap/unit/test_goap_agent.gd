@@ -20,47 +20,39 @@ class TestAgent:
 	extends GOAPAgent
 
 	func _init() -> void:
-		blackboard = GOAPState.new()
+		blackboard = GOAPTestHelper.create_state()
 		# Don't call super._init() to avoid scene tree issues
 
 
 var _agent: TestAgent
+var _created_agents: Array[GOAPAgent] = []
+
+
+## Creates an agent and tracks it for cleanup.
+func _create_tracked_agent(
+	initial_state: GOAPState = null,
+	actions: Array[GOAPAction] = [],
+	goals: Array[GOAPGoal] = []
+) -> GOAPAgent:
+	var agent := GOAPAgent.new(initial_state, actions, goals)
+	_created_agents.append(agent)
+	return agent
 
 
 func before_test() -> void:
 	_agent = TestAgent.new()
+	_created_agents.clear()
 
 
 func after_test() -> void:
-	_agent = null
-
-
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
-
-func _create_goal(
-	goal_name: StringName,
-	desired_state: Dictionary[StringName, Variant],
-	priority: float = 1.0
-) -> GOAPGoal:
-	var goal := GOAPGoal.new()
-	goal.goal_name = goal_name
-	goal.desired_state = desired_state
-	goal.priority = priority
-	return goal
-
-
-func _create_action(
-	goal_name: StringName,
-	preconditions: Dictionary[StringName, Variant] = {},
-	effects: Dictionary[StringName, Variant] = {}
-) -> GOAPAction:
-	var action := GOAPAction.new()
-	action.action_name = goal_name
-	action.preconditions = preconditions
-	action.effects = effects
-	return action
+	if _agent:
+		_agent.free()
+		_agent = null
+	# Free all additionally created agents
+	for agent in _created_agents:
+		if is_instance_valid(agent):
+			agent.free()
+	_created_agents.clear()
 
 
 # =============================================================================
@@ -94,8 +86,8 @@ func test_new_agent_no_current_action() -> void:
 
 func test_init_with_blackboard() -> void:
 	# Arrange & Act
-	var initial_state := GOAPState.new({&"health": 100})
-	var agent := GOAPAgent.new(initial_state)
+	var initial_state := GOAPTestHelper.create_state({&"health": 100})
+	var agent := _create_tracked_agent(initial_state)
 
 	# Assert
 	assert_int(agent.blackboard.get_value(&"health")).is_equal(100)
@@ -103,8 +95,8 @@ func test_init_with_blackboard() -> void:
 
 func test_init_with_actions() -> void:
 	# Arrange & Act
-	var actions: Array[GOAPAction] = [_create_action(&"Test")]
-	var agent := GOAPAgent.new(null, actions)
+	var actions: Array[GOAPAction] = [GOAPTestHelper.create_mock_action(&"Test")]
+	var agent := _create_tracked_agent(null, actions)
 
 	# Assert
 	assert_int(agent.actions.size()).is_equal(1)
@@ -112,8 +104,8 @@ func test_init_with_actions() -> void:
 
 func test_init_with_goals() -> void:
 	# Arrange & Act
-	var goals: Array[GOAPGoal] = [_create_goal(&"Test", {})]
-	var agent := GOAPAgent.new(null, [], goals)
+	var goals: Array[GOAPGoal] = [GOAPTestHelper.create_mock_goal(&"Test", {})]
+	var agent := _create_tracked_agent(null, [], goals)
 
 	# Assert
 	assert_int(agent.goals.size()).is_equal(1)
@@ -146,9 +138,9 @@ func test_needs_thinking_false_when_performing() -> void:
 func test_select_goal_chooses_highest_priority() -> void:
 	# Arrange
 	_agent.goals = [
-		_create_goal(&"LowPrio", {&"a": true}, 1.0),
-		_create_goal(&"HighPrio", {&"b": true}, 10.0),
-		_create_goal(&"MedPrio", {&"c": true}, 5.0)
+		GOAPTestHelper.create_mock_goal(&"LowPrio", {&"a": true}, 1.0),
+		GOAPTestHelper.create_mock_goal(&"HighPrio", {&"b": true}, 10.0),
+		GOAPTestHelper.create_mock_goal(&"MedPrio", {&"c": true}, 5.0)
 	]
 
 	# Act
@@ -176,8 +168,8 @@ func test_select_goal_skips_irrelevant() -> void:
 func test_select_goal_skips_already_achieved() -> void:
 	# Arrange
 	_agent.blackboard.set_value(&"already_done", true)
-	var achieved := _create_goal(&"Achieved", {&"already_done": true}, 10.0)
-	var pending := _create_goal(&"Pending", {&"not_done": true}, 1.0)
+	var achieved := GOAPTestHelper.create_mock_goal(&"Achieved", {&"already_done": true}, 10.0)
+	var pending := GOAPTestHelper.create_mock_goal(&"Pending", {&"not_done": true}, 1.0)
 
 	_agent.goals = [achieved, pending]
 
@@ -202,7 +194,7 @@ func test_select_goal_returns_null_when_none_available() -> void:
 func test_select_goal_returns_null_when_all_achieved() -> void:
 	# Arrange
 	_agent.blackboard.set_value(&"done", true)
-	_agent.goals = [_create_goal(&"Only", {&"done": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Only", {&"done": true})]
 
 	# Act
 	var selected := _agent._select_goal()
@@ -236,8 +228,8 @@ func test_select_goal_uses_dynamic_priority() -> void:
 func test_think_transitions_idle_to_planning() -> void:
 	# Arrange
 	_agent._state = GOAPAgent.State.IDLE
-	_agent.goals = [_create_goal(&"Goal", {&"target": true})]
-	_agent.actions = [_create_action(&"Act", {}, {&"target": true})]
+	_agent.goals = [GOAPTestHelper.create_mock_goal(&"Goal", {&"target": true})]
+	_agent.actions = [GOAPTestHelper.create_mock_action(&"Act", {}, {&"target": true})]
 
 	# Act
 	_agent._process_idle()
@@ -264,9 +256,9 @@ func test_think_stays_idle_when_no_goal() -> void:
 
 func test_goal_selected_signal_emitted() -> void:
 	# Arrange
-	var goal := _create_goal(&"TestGoal", {&"a": true})
+	var goal := GOAPTestHelper.create_mock_goal(&"TestGoal", {&"a": true})
 	_agent.goals = [goal]
-	_agent.actions = [_create_action(&"Act", {}, {&"a": true})]
+	_agent.actions = [GOAPTestHelper.create_mock_action(&"Act", {}, {&"a": true})]
 
 	var received_goal := [null]
 	_agent.goal_selected.connect(func(g): received_goal[0] = g)
@@ -280,8 +272,8 @@ func test_goal_selected_signal_emitted() -> void:
 
 func test_plan_created_signal_emitted() -> void:
 	# Arrange
-	var goal := _create_goal(&"Goal", {&"done": true})
-	var action := _create_action(&"Act", {}, {&"done": true})
+	var goal := GOAPTestHelper.create_mock_goal(&"Goal", {&"done": true})
+	var action := GOAPTestHelper.create_mock_action(&"Act", {}, {&"done": true})
 	_agent.goals = [goal]
 	_agent.actions = [action]
 	_agent._state = GOAPAgent.State.IDLE
@@ -303,7 +295,7 @@ func test_plan_created_signal_emitted() -> void:
 
 func test_plan_failed_signal_emitted_when_no_plan() -> void:
 	# Arrange
-	var goal := _create_goal(&"Impossible", {&"impossible": true})
+	var goal := GOAPTestHelper.create_mock_goal(&"Impossible", {&"impossible": true})
 	_agent.goals = [goal]
 	_agent.actions = []  # No actions = no plan
 	_agent._state = GOAPAgent.State.IDLE
@@ -315,7 +307,7 @@ func test_plan_failed_signal_emitted_when_no_plan() -> void:
 	_agent.think()  # IDLE -> PLANNING -> fails -> IDLE
 
 	# Assert
-	assert_that(failed_goal).is_same(goal)
+	assert_that(failed_goal[0]).is_same(goal)
 
 
 # =============================================================================
@@ -325,7 +317,7 @@ func test_plan_failed_signal_emitted_when_no_plan() -> void:
 func test_abort_returns_to_idle() -> void:
 	# Arrange
 	_agent._state = GOAPAgent.State.PERFORMING
-	_agent.current_goal = _create_goal(&"Test", {})
+	_agent.current_goal = GOAPTestHelper.create_mock_goal(&"Test", {})
 
 	# Act
 	_agent.abort()
@@ -337,7 +329,7 @@ func test_abort_returns_to_idle() -> void:
 func test_abort_clears_current_goal() -> void:
 	# Arrange
 	_agent._state = GOAPAgent.State.PERFORMING
-	_agent.current_goal = _create_goal(&"Test", {})
+	_agent.current_goal = GOAPTestHelper.create_mock_goal(&"Test", {})
 
 	# Act
 	_agent.abort()
@@ -348,7 +340,7 @@ func test_abort_clears_current_goal() -> void:
 
 func test_abort_emits_plan_aborted_signal() -> void:
 	# Arrange
-	var goal := _create_goal(&"AbortedGoal", {})
+	var goal := GOAPTestHelper.create_mock_goal(&"AbortedGoal", {})
 	_agent._state = GOAPAgent.State.PERFORMING
 	_agent.current_goal = goal
 
@@ -386,8 +378,8 @@ func test_blackboard_modifications_persist() -> void:
 
 func test_blackboard_is_separate_per_agent() -> void:
 	# Arrange
-	var agent1 := GOAPAgent.new()
-	var agent2 := GOAPAgent.new()
+	var agent1 := _create_tracked_agent()
+	var agent2 := _create_tracked_agent()
 
 	# Act
 	agent1.blackboard.set_value(&"key", "agent1")
@@ -414,9 +406,9 @@ func test_get_think_priority_default_is_one() -> void:
 func test_multiple_goals_same_priority() -> void:
 	# Arrange
 	_agent.goals = [
-		_create_goal(&"Goal1", {&"a": true}, 5.0),
-		_create_goal(&"Goal2", {&"b": true}, 5.0),
-		_create_goal(&"Goal3", {&"c": true}, 5.0)
+		GOAPTestHelper.create_mock_goal(&"Goal1", {&"a": true}, 5.0),
+		GOAPTestHelper.create_mock_goal(&"Goal2", {&"b": true}, 5.0),
+		GOAPTestHelper.create_mock_goal(&"Goal3", {&"c": true}, 5.0)
 	]
 
 	# Act
@@ -428,8 +420,8 @@ func test_multiple_goals_same_priority() -> void:
 
 func test_goal_with_empty_desired_state_always_achieved() -> void:
 	# Arrange
-	var empty_goal := _create_goal(&"Empty", {}, 10.0)
-	var real_goal := _create_goal(&"Real", {&"target": true}, 1.0)
+	var empty_goal := GOAPTestHelper.create_mock_goal(&"Empty", {}, 10.0)
+	var real_goal := GOAPTestHelper.create_mock_goal(&"Real", {&"target": true}, 1.0)
 	_agent.goals = [empty_goal, real_goal]
 
 	# Act
