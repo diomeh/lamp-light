@@ -6,3 +6,7 @@
 /vendor/
 /.vscode/
 /.github/
+
+# Test reports
+/reports/
+
