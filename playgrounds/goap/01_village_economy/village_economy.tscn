@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://btfcr3n3uqc5u"]
-
-[ext_resource type="Script" uid="uid://bcnmefh0toaun" path="res://playgrounds/goap/01_village_economy/village_economy.gd" id="1_a7h4k"]
-
-[node name="VillageEconomy" type="Node2D"]
-script = ExtResource("1_a7h4k")

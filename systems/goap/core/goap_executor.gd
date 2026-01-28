@@ -181,3 +181,10 @@ func _reset() -> void:
 	_current_action = null
 	_action_entered = false
 	_is_running = false
+
+
+func get_remaining_actions() -> Array[GOAPAction]:
+	if not _is_running:
+		return []
+
+	return _plan.slice(_current_index, _plan.size())
