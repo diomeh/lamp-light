@@ -1,0 +1,148 @@
+[gd_scene load_steps=2 format=3 uid="uid://bxm5k8oapqr2s"]
+
+[ext_resource type="Script" uid="uid://clw5k8xn6bpla" path="res://systems/goap/debug/ui/panels/agent_state_panel.gd" id="1_agent_state"]
+
+[node name="AgentStatePanel" type="ScrollContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_agent_state")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="HeaderContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderMedium"
+text = "Agent State"
+
+[node name="RefreshButton" type="Button" parent="VBoxContainer/HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refresh"
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="CurrentStateSection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SectionLabel" type="Label" parent="VBoxContainer/CurrentStateSection"]
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+text = "Current State"
+
+[node name="StateGrid" type="GridContainer" parent="VBoxContainer/CurrentStateSection"]
+layout_mode = 2
+columns = 2
+
+[node name="StateKeyLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+layout_mode = 2
+text = "State:"
+
+[node name="StateLabel" type="RichTextLabel" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+bbcode_enabled = true
+text = "-"
+fit_content = true
+scroll_active = false
+
+[node name="GoalKeyLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+layout_mode = 2
+text = "Current Goal:"
+
+[node name="GoalLabel" type="RichTextLabel" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+bbcode_enabled = true
+text = "-"
+fit_content = true
+scroll_active = false
+
+[node name="PriorityKeyLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+layout_mode = 2
+text = "Priority:"
+
+[node name="PriorityLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "-"
+
+[node name="ActionKeyLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+layout_mode = 2
+text = "Current Action:"
+
+[node name="ActionLabel" type="RichTextLabel" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+bbcode_enabled = true
+text = "-"
+fit_content = true
+scroll_active = false
+
+[node name="ProgressKeyLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+layout_mode = 2
+text = "Plan Progress:"
+
+[node name="ProgressLabel" type="Label" parent="VBoxContainer/CurrentStateSection/StateGrid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 / 0"
+
+[node name="ProgressBar" type="ProgressBar" parent="VBoxContainer/CurrentStateSection"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 10.0
+show_percentage = false
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="GoalsSection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="SectionLabel" type="Label" parent="VBoxContainer/GoalsSection"]
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+text = "Available Goals"
+
+[node name="GoalsList" type="ItemList" parent="VBoxContainer/GoalsSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HSeparator3" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="ActionsSection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="SectionLabel" type="Label" parent="VBoxContainer/ActionsSection"]
+layout_mode = 2
+theme_type_variation = &"HeaderSmall"
+text = "Available Actions"
+
+[node name="ActionsList" type="ItemList" parent="VBoxContainer/ActionsSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3

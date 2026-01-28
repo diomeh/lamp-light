@@ -1,0 +1,79 @@
+[gd_scene load_steps=2 format=3 uid="uid://d3t8vav2w5xef"]
+
+[ext_resource type="Script" uid="uid://bjbnnu01eus5" path="res://systems/goap/debug/ui/panels/event_log.gd" id="1_event_log"]
+
+[node name="EventLog" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+script = ExtResource("1_event_log")
+
+[node name="HeaderContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderMedium"
+text = "Event Log"
+
+[node name="EventCountLabel" type="Label" parent="HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 / 0 events"
+
+[node name="ClearButton" type="Button" parent="HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clear"
+
+[node name="ExportButton" type="Button" parent="HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Export to JSON"
+
+[node name="ToolbarContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SearchLabel" type="Label" parent="ToolbarContainer"]
+layout_mode = 2
+text = "Search:"
+vertical_alignment = 1
+
+[node name="SearchInput" type="LineEdit" parent="ToolbarContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Filter events..."
+clear_button_enabled = true
+
+[node name="AutoScrollCheckBox" type="CheckBox" parent="ToolbarContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Auto-scroll"
+
+[node name="FiltersLabel" type="Label" parent="."]
+layout_mode = 2
+text = "Event Type Filters:"
+
+[node name="FilterContainer" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HSeparator" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="LogText" type="RichTextLabel" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_following = true

@@ -237,7 +237,7 @@ res://
 │       ├── actions/
 │       │   └── (reusable action scripts)...
 │       └── debug/
-│           └── goap_debug.gd
+│           └── goap_debug_manager.gd
 ├── playgrounds/
 │   └── goap/
 │       └── (demo scenes)...

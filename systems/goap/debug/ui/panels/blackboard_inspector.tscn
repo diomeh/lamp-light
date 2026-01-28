@@ -1,0 +1,79 @@
+[gd_scene load_steps=2 format=3 uid="uid://cn7sas4t2uvwx"]
+
+[ext_resource type="Script" uid="uid://bccmjrmar2voo" path="res://systems/goap/debug/ui/panels/blackboard_inspector.gd" id="1_blackboard"]
+
+[node name="BlackboardInspector" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+script = ExtResource("1_blackboard")
+
+[node name="HeaderContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderMedium"
+text = "Blackboard Inspector"
+
+[node name="EntryCountLabel" type="Label" parent="HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 entries"
+
+[node name="RefreshButton" type="Button" parent="HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refresh"
+
+[node name="ToolbarContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SearchLabel" type="Label" parent="ToolbarContainer"]
+layout_mode = 2
+text = "Search:"
+vertical_alignment = 1
+
+[node name="SearchInput" type="LineEdit" parent="ToolbarContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Filter by key or value..."
+clear_button_enabled = true
+
+[node name="ClearSearchButton" type="Button" parent="ToolbarContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clear"
+
+[node name="OptionsContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ShowTypesCheckBox" type="CheckBox" parent="OptionsContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Show Types"
+
+[node name="HighlightChangesCheckBox" type="CheckBox" parent="OptionsContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Highlight Changes"
+
+[node name="HSeparator" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="BlackboardTree" type="Tree" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+columns = 3
+hide_root = true

@@ -1,0 +1,111 @@
+[gd_scene load_steps=2 format=3 uid="uid://d2w8f5h6j9kpq"]
+
+[ext_resource type="Script" path="res://systems/goap/debug/ui/panels/plan_visualizer.gd" id="1_plan_viz"]
+
+[node name="PlanVisualizer" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+script = ExtResource("1_plan_viz")
+
+[node name="HeaderContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"HeaderMedium"
+text = "Plan Visualizer"
+
+[node name="RefreshButton" type="Button" parent="HeaderContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Refresh"
+
+[node name="InfoContainer" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GoalContainer" type="HBoxContainer" parent="InfoContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GoalKeyLabel" type="Label" parent="InfoContainer/GoalContainer"]
+layout_mode = 2
+text = "Goal:"
+
+[node name="GoalLabel" type="RichTextLabel" parent="InfoContainer/GoalContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 24)
+layout_mode = 2
+bbcode_enabled = true
+text = "-"
+fit_content = true
+scroll_active = false
+
+[node name="PlanSizeContainer" type="HBoxContainer" parent="InfoContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PlanSizeKeyLabel" type="Label" parent="InfoContainer/PlanSizeContainer"]
+layout_mode = 2
+text = "Plan:"
+
+[node name="PlanSizeLabel" type="Label" parent="InfoContainer/PlanSizeContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 actions"
+
+[node name="TotalCostContainer" type="HBoxContainer" parent="InfoContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TotalCostKeyLabel" type="Label" parent="InfoContainer/TotalCostContainer"]
+layout_mode = 2
+text = "Total Cost:"
+
+[node name="TotalCostLabel" type="Label" parent="InfoContainer/TotalCostContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0.0"
+
+[node name="ProgressContainer" type="HBoxContainer" parent="InfoContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ProgressKeyLabel" type="Label" parent="InfoContainer/ProgressContainer"]
+layout_mode = 2
+text = "Progress:"
+
+[node name="ProgressLabel" type="Label" parent="InfoContainer/ProgressContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0 / 0"
+
+[node name="OptionsContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShowDetailsCheckBox" type="CheckBox" parent="OptionsContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Show Details (Preconditions/Effects)"
+
+[node name="HSeparator" type="HSeparator" parent="."]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ActionsContainer" type="VBoxContainer" parent="ScrollContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4

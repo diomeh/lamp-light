@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://dqh8v3m2xwp7r"]
+
+[ext_resource type="Script" path="res://playgrounds/goap/03_crafting_factory/crafting_factory.gd" id="1_factory"]
+
+[node name="CraftingFactory" type="Node2D"]
+script = ExtResource("1_factory")
+crafter_count = 6
+auto_generate_orders = true
+order_interval = 10.0
