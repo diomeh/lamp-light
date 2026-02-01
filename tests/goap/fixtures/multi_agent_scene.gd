@@ -11,7 +11,7 @@ func _ready() -> void:
 	_configure_agent($Agent3, &"Goal3", {&"done3": true})
 
 
-func _configure_agent(agent: Node, goal_name: StringName, desired: Dictionary) -> void:
+func _configure_agent(agent: Node, goal_name: StringName, desired: Dictionary[StringName, Variant]) -> void:
 	if not agent or not agent.has_method("set"):
 		return
 

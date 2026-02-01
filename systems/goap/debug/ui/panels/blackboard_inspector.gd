@@ -33,6 +33,12 @@ extends Control
 ## Highlight changes checkbox.
 @onready var highlight_changes_checkbox: CheckBox = %HighlightChangesCheckBox
 
+## Show inherited values checkbox.
+@onready var show_inherited_checkbox: CheckBox = %ShowInheritedCheckBox
+
+## Show parent chain checkbox.
+@onready var show_parent_chain_checkbox: CheckBox = %ShowParentChainCheckBox
+
 ## Entry count label.
 @onready var entry_count_label: Label = %EntryCountLabel
 
@@ -62,14 +68,17 @@ func _ready() -> void:
 	# Setup tree
 	if blackboard_tree:
 		blackboard_tree.set_column_titles_visible(true)
-		blackboard_tree.set_columns(3)
+		blackboard_tree.set_columns(4)
 		blackboard_tree.set_column_title(0, "Key")
 		blackboard_tree.set_column_title(1, "Value")
 		blackboard_tree.set_column_title(2, "Type")
+		blackboard_tree.set_column_title(3, "Source")
 		blackboard_tree.set_column_expand(0, true)
 		blackboard_tree.set_column_expand(1, true)
 		blackboard_tree.set_column_expand(2, false)
+		blackboard_tree.set_column_expand(3, false)
 		blackboard_tree.set_column_custom_minimum_width(2, 100)
+		blackboard_tree.set_column_custom_minimum_width(3, 120)
 
 	# Connect signals
 	if search_input:
@@ -102,8 +111,14 @@ func refresh(agent: GOAPAgent) -> void:
 
 	_current_agent = agent
 
-	# Get current blackboard state
-	var current_state := agent.blackboard.to_dict()
+	# Get current blackboard state (local only or flattened based on show_inherited)
+	var current_state: Dictionary
+	var show_inherited := show_inherited_checkbox and show_inherited_checkbox.button_pressed
+
+	if show_inherited and agent.blackboard.has_parent():
+		current_state = agent.blackboard.flatten()
+	else:
+		current_state = agent.blackboard.to_dict()
 
 	# Detect changes
 	_detect_changes(current_state)
@@ -153,6 +168,15 @@ func _update_tree(state: Dictionary) -> void:
 	blackboard_tree.clear()
 	var root := blackboard_tree.create_item()
 
+	# Check if we're showing hierarchy
+	var has_hierarchy := _current_agent and _current_agent.blackboard.has_parent()
+	var show_inherited := show_inherited_checkbox and show_inherited_checkbox.button_pressed
+	var show_parent_chain := show_parent_chain_checkbox and show_parent_chain_checkbox.button_pressed
+
+	# Add parent chain visualization if enabled
+	if show_parent_chain and has_hierarchy:
+		_add_parent_chain_visualization(root)
+
 	# Get sorted keys
 	var keys := state.keys()
 	keys.sort()
@@ -170,18 +194,50 @@ func _update_tree(state: Dictionary) -> void:
 
 		var item := blackboard_tree.create_item(root)
 
-		# Key column
-		item.set_text(0, str(key))
+		# Determine source of value
+		var is_local := _current_agent.blackboard.has_value(key, true)
+		var source_text := ""
+		var is_override := false
+
+		if has_hierarchy and show_inherited:
+			if is_local:
+				# Check if it overrides parent
+				var parent_has := false
+				if _current_agent.blackboard.has_parent():
+					parent_has = _current_agent.blackboard.get_parent().has_value(key, false)
+				source_text = "[Local]"
+				is_override = parent_has
+			else:
+				source_text = "[Inherited]"
+		else:
+			source_text = "[Local]"
+
+		# Key column (prefix with marker if inherited)
+		var key_text := str(key)
+		if has_hierarchy and show_inherited and not is_local:
+			key_text = "\u2191 " + key_text  # Up arrow for inherited
+			item.set_custom_color(0, Color(0.7, 0.7, 0.8))
+		item.set_text(0, key_text)
 
 		# Value column
 		var value = state[key]
 		value_str = _format_value(value)
 		item.set_text(1, value_str)
+		if has_hierarchy and show_inherited and not is_local:
+			item.set_custom_color(1, Color(0.7, 0.7, 0.8))
 
 		# Type column (if enabled)
 		if show_types_checkbox and show_types_checkbox.button_pressed:
 			var type_str := _get_type_name(value)
 			item.set_text(2, type_str)
+			if has_hierarchy and show_inherited and not is_local:
+				item.set_custom_color(2, Color(0.7, 0.7, 0.8))
+
+		# Source column
+		if is_override:
+			source_text += " [OVERRIDE]"
+			item.set_custom_color(3, Color(1.0, 0.8, 0.3))
+		item.set_text(3, source_text)
 
 		# Highlight changes
 		if highlight_changes_checkbox and highlight_changes_checkbox.button_pressed:
@@ -189,6 +245,7 @@ func _update_tree(state: Dictionary) -> void:
 				item.set_custom_bg_color(0, Color(0.3, 0.5, 0.3, 0.3))
 				item.set_custom_bg_color(1, Color(0.3, 0.5, 0.3, 0.3))
 				item.set_custom_bg_color(2, Color(0.3, 0.5, 0.3, 0.3))
+				item.set_custom_bg_color(3, Color(0.3, 0.5, 0.3, 0.3))
 
 
 ## Formats a value for display.[br][br]
@@ -255,6 +312,38 @@ func _get_type_name(value: Variant) -> String:
 			return "Object"
 		_:
 			return "Unknown"
+
+
+## Adds parent chain visualization to tree.[br][br]
+##
+## [param root] Root tree item.
+func _add_parent_chain_visualization(root: TreeItem) -> void:
+	if not _current_agent or not _current_agent.blackboard.has_parent():
+		return
+
+	var chain_item := blackboard_tree.create_item(root)
+	chain_item.set_text(0, "--- Parent Chain ---")
+	chain_item.set_selectable(0, false)
+	chain_item.set_custom_color(0, Color(0.5, 0.5, 0.6))
+
+	var current := _current_agent.blackboard.get_parent()
+	var level := 1
+	while current != null:
+		var parent_item := blackboard_tree.create_item(chain_item)
+		var value_count := current.to_dict().size()
+		parent_item.set_text(0, "Parent Level %d" % level)
+		parent_item.set_text(1, "%d values" % value_count)
+		parent_item.set_custom_color(0, Color(0.6, 0.6, 0.7))
+		parent_item.set_custom_color(1, Color(0.6, 0.6, 0.7))
+		parent_item.set_selectable(0, false)
+		level += 1
+		current = current.get_parent()
+
+	# Add separator
+	var separator := blackboard_tree.create_item(root)
+	separator.set_text(0, "--- Current State ---")
+	separator.set_selectable(0, false)
+	separator.set_custom_color(0, Color(0.5, 0.5, 0.6))
 
 
 ## Counts visible entries after filter.[br][br]

@@ -7,6 +7,7 @@
 ## - Real physics process integration
 extends GdUnitTestSuite
 
+@warning_ignore_start("redundant_await")
 
 # =============================================================================
 # SETUP
@@ -25,9 +26,12 @@ func before_test() -> void:
 	pass
 
 
+
 func after_test() -> void:
 	if _runner:
-		_runner.free()
+		var s =_runner.scene()
+		if s:
+			s.queue_free()
 		_runner = null
 
 	# Clean up orchestrator registration for test isolation
@@ -47,9 +51,6 @@ func test_integration_agent_registers_on_ready() -> void:
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
 
-	# Act - wait for scene to initialize
-	await _runner.scene_ready()
-
 	# Assert - agent should be registered with orchestrator
 	var agent_count := GOAPOrchestrator.get_agent_count()
 	assert_int(agent_count).is_greater(0)
@@ -63,14 +64,12 @@ func test_integration_agent_unregisters_on_exit_tree() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
-
-	# Act - free the scene (triggers exit_tree)
-	_runner.free()
+	_runner.scene().queue_free()
 	_runner = null
-	# Wait for cleanup - two frames ensure proper tree exit
-	await Engine.get_main_loop().process_frame
-	await Engine.get_main_loop().process_frame
+
+	# Wait for cleanup
+	for _i in range(3):
+		await Engine.get_main_loop().process_frame
 
 	# Assert - agent should be unregistered (orchestrator cleared by after_test)
 	var final_count := GOAPOrchestrator.get_agent_count()
@@ -85,11 +84,10 @@ func test_integration_multiple_agents_in_scene() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/multi_agent_scene.tscn")
-	await _runner.scene_ready()
 
 	# Assert - orchestrator should have multiple agents
 	var count := GOAPOrchestrator.get_agent_count()
-	assert_int(count).is_greater_or_equal(3)
+	assert_int(count).is_greater_equal(3)
 
 
 func test_integration_agent_signals_emit_correctly() -> void:
@@ -100,29 +98,44 @@ func test_integration_agent_signals_emit_correctly() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 
-	# Get agent from scene
-	var agent := _runner.get_node_or_null("Agent") as GOAPAgent
+	var agent := _runner.find_child("Agent") as GOAPAgent
 	if not agent:
 		return  # Agent node not found - test cannot proceed
 
-	# Record initial state
-	var initial_state := agent.get_state()
+	# Verify agent is set up correctly before testing signals
+	assert_bool(agent.goals.size() > 0).is_true()
+	assert_bool(agent.actions.size() > 0).is_true()
+	assert_bool(GOAPOrchestrator.get_agent_count() > 0).is_true()
+	assert_bool(agent.needs_thinking()).is_true()
 
-	# Act - run physics for a few frames to allow orchestration
-	_runner.simulate_frames(5)
+	# Track signal emissions directly instead of using GdUnit4 monitor
+	# (GdUnit4's is_emitted waits for future emissions, not past ones)
+	# Use array since GDScript lambdas capture by value, not reference
+	var signal_counts := [0, 0, 0]  # [goal_selected, plan_created, plan_completed]
 
-	# Assert - agent should have processed (state transitioned from IDLE)
-	# A properly configured agent should either be PLANNING or PERFORMING
-	# after orchestration runs, not stuck in IDLE
-	var final_state := agent.get_state()
-	if initial_state == GOAPAgent.State.IDLE:
-		# If started IDLE, should have moved to PLANNING or PERFORMING
-		assert_bool(final_state in [GOAPAgent.State.PLANNING, GOAPAgent.State.PERFORMING]).is_true()
-	else:
-		# If already processing, should remain in valid state
-		assert_bool(final_state in [GOAPAgent.State.IDLE, GOAPAgent.State.PLANNING, GOAPAgent.State.PERFORMING]).is_true()
+	agent.goal_selected.connect(func(_goal): signal_counts[0] += 1)
+	agent.plan_created.connect(func(_goal, _plan): signal_counts[1] += 1)
+	agent.plan_completed.connect(func(_goal): signal_counts[2] += 1)
+
+	# Act - manually trigger orchestrator processing since autoloads are not
+	# processed by simulate_frames. Then manually tick the agent's execution.
+	GOAPOrchestrator._process_agents()
+
+	# Manually tick agent execution since simulate_frames may not reliably call
+	# _physics_process on scene nodes in bulk test runs. Need 2 ticks:
+	# first tick executes action, second tick completes the plan.
+	for i in range(2):
+		agent._physics_process(0.016)
+
+	# Assert - agent should be back in IDLE after plan completes
+	assert_bool(agent.needs_thinking()).is_true()
+
+	# Assert - orchestrator triggers think() on IDLE agents, which selects a goal,
+	# creates a plan, and completes it. Verify the key lifecycle signals fired.
+	assert_int(signal_counts[0]).is_equal(1)
+	assert_int(signal_counts[1]).is_equal(1)
+	assert_int(signal_counts[2]).is_equal(1)
 
 
 func test_integration_orchestrator_schedules_think() -> void:
@@ -133,26 +146,20 @@ func test_integration_orchestrator_schedules_think() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 
-	var agent := _runner.get_node_or_null("Agent") as GOAPAgent
+	var agent := _runner.find_child("Agent") as GOAPAgent
 	if not agent:
 		return  # Agent node not found - test cannot proceed
 
-	# Ensure agent is IDLE to start
-	if agent.get_state() != GOAPAgent.State.IDLE:
-		agent.abort()
+	# Agent starts IDLE, so orchestrator should pick it up on the next frame
+	assert_bool(agent.needs_thinking()).is_true()
 
-	# Record initial state
-	var initial_state := agent.get_state()
+	# Act - manually trigger orchestrator processing since autoloads are not
+	# processed by simulate_frames
+	GOAPOrchestrator._process_agents()
 
-	# Act - let orchestrator process
-	_runner.simulate_frames(5)
-
-	# Assert - agent should have processed (state changed from IDLE)
-	var final_state := agent.get_state()
-	assert_bool(initial_state == GOAPAgent.State.IDLE).is_true()
-	assert_bool(final_state != GOAPAgent.State.IDLE).is_true()
+	# Assert - orchestrator called think(), which transitions the agent out of IDLE
+	assert_bool(agent.needs_thinking()).is_false()
 
 
 # =============================================================================
@@ -167,9 +174,8 @@ func test_integration_agent_accesses_parent_actor() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 
-	var agent := _runner.get_node_or_null("Agent") as GOAPAgent
+	var agent := _runner.find_child("Agent") as GOAPAgent
 	if not agent:
 		return  # Agent node not found - test cannot proceed
 
@@ -185,9 +191,8 @@ func test_integration_action_modifies_actor() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 
-	var agent := _runner.get_node_or_null("Agent") as GOAPAgent
+	var agent := _runner.find_child("Agent") as GOAPAgent
 	if not agent:
 		return  # Agent node not found - test cannot proceed
 
@@ -195,7 +200,7 @@ func test_integration_action_modifies_actor() -> void:
 	_runner.simulate_frames(10)
 
 	# Assert - just verify no errors during execution
-	assert_int(GOAPOrchestrator.get_agent_count()).is_greater_or_equal(1)
+	assert_int(GOAPOrchestrator.get_agent_count()).is_greater_equal(1)
 
 
 # =============================================================================
@@ -210,13 +215,12 @@ func test_integration_npc_patrol_behavior() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/npc_behavior_scene.tscn")
-	await _runner.scene_ready()
 
 	# Act - run simulation for patrol cycle
 	_runner.simulate_frames(50)
 
 	# Assert - agent should have completed at least one goal
-	var agent := _runner.get_node_or_null("NPC") as GOAPAgent
+	var agent := _runner.find_child("NPC") as GOAPAgent
 	if agent:
 		# Check if any signals were emitted
 		assert_int(GOAPOrchestrator.get_agent_count()).is_greater(0)
@@ -230,7 +234,6 @@ func test_integration_npc_gather_and_return() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/npc_behavior_scene.tscn")
-	await _runner.scene_ready()
 
 	# Act - run gathering cycle
 	_runner.simulate_frames(100)
@@ -251,7 +254,6 @@ func test_integration_multi_agent_think_scheduling() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/multi_agent_scene.tscn")
-	await _runner.scene_ready()
 
 	# Act - let orchestrator process multiple times
 	for i in range(5):
@@ -259,7 +261,7 @@ func test_integration_multi_agent_think_scheduling() -> void:
 
 	# Assert - all agents should have processed
 	var agent_count := GOAPOrchestrator.get_agent_count()
-	assert_int(agent_count).is_greater_or_equal(3)
+	assert_int(agent_count).is_greater_equal(3)
 
 
 func test_integration_agent_state_isolation() -> void:
@@ -270,7 +272,6 @@ func test_integration_agent_state_isolation() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/multi_agent_scene.tscn")
-	await _runner.scene_ready()
 
 	# Act - modify one agent's blackboard
 	var agents := GOAPOrchestrator.get_agents()
@@ -297,18 +298,15 @@ func test_integration_scene_transition_cleanup() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 	var initial_count := GOAPOrchestrator.get_agent_count()
 
 	# Act - replace scene
-	_runner.free()
 	await Engine.get_main_loop().process_frame
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 
 	# Assert - orchestrator should have agents from new scene
 	var new_count := GOAPOrchestrator.get_agent_count()
-	assert_int(new_count).is_greater_or_equal(initial_count)
+	assert_int(new_count).is_greater_equal(initial_count)
 
 
 func test_integration_multiple_scene_loads() -> void:
@@ -322,19 +320,16 @@ func test_integration_multiple_scene_loads() -> void:
 
 	# Act - load different scenes sequentially
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 	counts.append(GOAPOrchestrator.get_agent_count())
 
-	_runner.free()
+	_runner.scene().queue_free()
 	await Engine.get_main_loop().process_frame
 	_runner = scene_runner("res://tests/goap/fixtures/multi_agent_scene.tscn")
-	await _runner.scene_ready()
 	counts.append(GOAPOrchestrator.get_agent_count())
 
-	_runner.free()
+	_runner.scene().queue_free()
 	await Engine.get_main_loop().process_frame
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 	counts.append(GOAPOrchestrator.get_agent_count())
 
 	# Assert - orchestrator should be functional
@@ -355,7 +350,6 @@ func test_integration_graceful_degradation_on_error() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/test_agent_scene.tscn")
-	await _runner.scene_ready()
 
 	# Act - simulate and check for errors
 	_runner.simulate_frames(10)
@@ -376,7 +370,6 @@ func test_integration_frame_time_with_agents() -> void:
 
 	# Arrange
 	_runner = scene_runner("res://tests/goap/fixtures/multi_agent_scene.tscn")
-	await _runner.scene_ready()
 
 	# Act - measure frame time over several frames
 	var frame_times: Array[float] = []

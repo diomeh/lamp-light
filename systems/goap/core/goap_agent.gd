@@ -83,6 +83,9 @@ var current_goal: GOAPGoal = null
 ## Plan executor instance.
 var _executor: GOAPExecutor = GOAPExecutor.new()
 
+## Goals that failed planning this cycle (cleared when entering PERFORMING or IDLE with no goal).
+var _failed_goals_this_cycle: Array[GOAPGoal] = []
+
 ## Agent state machine states.
 enum State {
 	IDLE,       ## Waiting for orchestrator to call think()
@@ -196,33 +199,46 @@ func _process_idle() -> void:
 
 
 ## Process PLANNING state: create plan for current goal.
+##
+## Attempts to plan for the current goal. If planning fails, tries fallback
+## goals in priority order until one succeeds or all fail.
 func _process_planning() -> void:
-	if not current_goal:
-		_state = State.IDLE
-		return
+	while current_goal:
+		# Snapshot blackboard to prevent race conditions during planning
+		var plan_start := Time.get_ticks_usec()
+		var plan := GOAPPlanner.plan(blackboard.to_flat_state(), actions, current_goal)
+		var plan_time_ms := (Time.get_ticks_usec() - plan_start) / 1000.0
 
-	# Snapshot blackboard to prevent race conditions during planning
-	var plan_start := Time.get_ticks_usec()
-	var plan := GOAPPlanner.plan(blackboard.duplicate(), actions, current_goal)
-	var plan_time_ms := (Time.get_ticks_usec() - plan_start) / 1000.0
+		# Emit metrics for monitoring
+		plan_metrics.emit(current_goal, plan, plan_time_ms)
 
-	# Emit metrics for monitoring
-	plan_metrics.emit(current_goal, plan, plan_time_ms)
+		if plan.is_empty():
+			var reason := "No valid action sequence found"
+			if actions.is_empty():
+				reason = "No actions available"
+			elif not current_goal.is_relevant(blackboard.to_ref()):
+				reason = "Goal not relevant"
+			plan_debug.emit(current_goal, reason)
 
-	if plan.is_empty():
-		var reason := "No valid action sequence found"
-		if actions.is_empty():
-			reason = "No actions available"
-		elif not current_goal.is_relevant(blackboard.to_ref()):
-			reason = "Goal not relevant"
-		plan_debug.emit(current_goal, reason)
+			plan_failed.emit(current_goal)
 
-		plan_failed.emit(current_goal)
-		_reset_to_idle()
-	else:
-		plan_created.emit(current_goal, plan)
-		_executor.start(plan)
-		_state = State.PERFORMING
+			# Track failed goal and attempt fallback to lower priority goal
+			_failed_goals_this_cycle.append(current_goal)
+			current_goal = _select_goal()
+
+			if current_goal:
+				goal_selected.emit(current_goal)
+				continue  # Try planning for fallback goal
+			else:
+				# No fallback available, reset to idle
+				_failed_goals_this_cycle.clear()
+				_reset_to_idle()
+				return
+		else:
+			plan_created.emit(current_goal, plan)
+			_executor.start(plan)
+			_state = State.PERFORMING
+			return
 
 
 ## Process PERFORMING state: tick executor.
@@ -238,6 +254,7 @@ func _process_performing(delta: float) -> void:
 
 ## Selects highest priority relevant, unachieved goal.[br][br]
 ##
+## Excludes goals in [member _failed_goals_this_cycle].[br]
 ## Returns selected goal or null if none available.
 func _select_goal() -> GOAPGoal:
 	var best_goal: GOAPGoal = null
@@ -245,6 +262,9 @@ func _select_goal() -> GOAPGoal:
 	var state_ref := blackboard.to_ref()
 
 	for goal in goals:
+		if goal in _failed_goals_this_cycle:
+			continue
+
 		if not goal.is_relevant(state_ref):
 			continue
 

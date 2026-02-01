@@ -12,10 +12,11 @@ extends Node
 const TestGoal = preload("res://tests/goap/fixtures/test_goal.gd")
 const TestAction = preload("res://tests/goap/fixtures/test_action.gd")
 
+@onready var agent: GOAPAgent = $Agent
+
 
 func _ready() -> void:
 	# Configure agent with test goal and action
-	var agent := $Agent as GOAPAgent
 	if agent:
 		var goal := TestGoal.new()
 		var action := TestAction.new()
