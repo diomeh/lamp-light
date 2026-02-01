@@ -29,16 +29,12 @@ var _agent: LifecycleTestAgent
 
 
 func before_test() -> void:
-	_agent = LifecycleTestAgent.new()
+	_agent = auto_free(LifecycleTestAgent.new()) as LifecycleTestAgent
 	_agent._setup_for_test()
 
 
 func after_test() -> void:
-	if _agent:
-		_agent.free()
-		_agent = null
-
-	# Clean up orchestrator registration
+	_agent = null
 	if GOAPOrchestrator:
 		GOAPOrchestrator.clear()
 

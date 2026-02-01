@@ -34,7 +34,6 @@ func after_test() -> void:
 			s.queue_free()
 		_runner = null
 
-	# Clean up orchestrator registration for test isolation
 	GOAPOrchestrator.clear()
 
 

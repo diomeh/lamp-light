@@ -34,24 +34,20 @@ func _create_tracked_agent(
 	actions: Array[GOAPAction] = [],
 	goals: Array[GOAPGoal] = []
 ) -> GOAPAgent:
-	var agent := GOAPAgent.new(initial_state, actions, goals)
+	var agent := auto_free(
+		GOAPAgent.new(initial_state, actions, goals)
+	) as GOAPAgent
 	_created_agents.append(agent)
 	return agent
 
 
 func before_test() -> void:
-	_agent = TestAgent.new()
+	_agent = auto_free(TestAgent.new()) as TestAgent
 	_created_agents.clear()
 
 
 func after_test() -> void:
-	if _agent:
-		_agent.free()
-		_agent = null
-	# Free all additionally created agents
-	for agent in _created_agents:
-		if is_instance_valid(agent):
-			agent.free()
+	_agent = null
 	_created_agents.clear()
 
 
@@ -91,6 +87,7 @@ func test_init_with_blackboard() -> void:
 
 	# Assert
 	assert_int(agent.blackboard.get_value(&"health")).is_equal(100)
+	collect_orphan_node_details()
 
 
 func test_init_with_actions() -> void:
@@ -100,6 +97,7 @@ func test_init_with_actions() -> void:
 
 	# Assert
 	assert_int(agent.actions.size()).is_equal(1)
+	collect_orphan_node_details()
 
 
 func test_init_with_goals() -> void:
@@ -109,6 +107,7 @@ func test_init_with_goals() -> void:
 
 	# Assert
 	assert_int(agent.goals.size()).is_equal(1)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -388,6 +387,7 @@ func test_blackboard_is_separate_per_agent() -> void:
 	# Assert
 	assert_str(agent1.blackboard.get_value(&"key")).is_equal("agent1")
 	assert_str(agent2.blackboard.get_value(&"key")).is_equal("agent2")
+	collect_orphan_node_details()
 
 
 # =============================================================================

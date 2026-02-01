@@ -19,14 +19,12 @@ var _mock_agent: GOAPAgent
 
 func before_test() -> void:
 	_executor = GOAPExecutor.new()
-	_mock_agent = GOAPAgent.new()
+	_mock_agent = auto_free(GOAPAgent.new()) as GOAPAgent
 
 
 func after_test() -> void:
 	_executor = null
-	if _mock_agent:
-		_mock_agent.free()
-		_mock_agent = null
+	_mock_agent = null
 
 
 # =============================================================================
@@ -73,7 +71,7 @@ func test_start_with_empty_plan_emits_completed_immediately() -> void:
 
 func test_start_with_plan_sets_running() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action]
 
 	# Act
@@ -85,8 +83,8 @@ func test_start_with_plan_sets_running() -> void:
 
 func test_start_sets_plan_size() -> void:
 	# Arrange
-	var action1 := MockAction.new()
-	var action2 := MockAction.new()
+	var action1 := auto_free(MockAction.new()) as MockAction
+	var action2 := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action1, action2]
 
 	# Act
@@ -98,7 +96,7 @@ func test_start_sets_plan_size() -> void:
 
 func test_start_resets_index_to_zero() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action]
 
 	# Act
@@ -110,13 +108,13 @@ func test_start_resets_index_to_zero() -> void:
 
 func test_start_aborts_previous_plan() -> void:
 	# Arrange
-	var old_action := MockAction.new()
+	var old_action := auto_free(MockAction.new()) as MockAction
 	old_action.action_name = &"OldAction"
 	var old_plan: Array[GOAPAction] = [old_action]
 	_executor.start(old_plan)
 	_executor.tick(_mock_agent, 0.016)  # Enter old action
 
-	var new_action := MockAction.new()
+	var new_action := auto_free(MockAction.new()) as MockAction
 	new_action.action_name = &"NewAction"
 	var new_plan: Array[GOAPAction] = [new_action]
 
@@ -133,7 +131,7 @@ func test_start_aborts_previous_plan() -> void:
 
 func test_tick_calls_enter_on_first_frame() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
 
@@ -146,7 +144,7 @@ func test_tick_calls_enter_on_first_frame() -> void:
 
 func test_tick_calls_execute_every_frame() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.execute_frames = 3  # Keep running
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -162,7 +160,7 @@ func test_tick_calls_execute_every_frame() -> void:
 
 func test_tick_enter_called_only_once() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.execute_frames = 2  # Keep running for multiple ticks
 	var enter_count := [0]
 	action.on_enter = func(_a): enter_count[0] += 1
@@ -180,7 +178,7 @@ func test_tick_enter_called_only_once() -> void:
 
 func test_tick_when_not_running_does_nothing() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 
 	# Act - tick without starting
 	_executor.tick(_mock_agent, 0.016)
@@ -195,7 +193,7 @@ func test_tick_when_not_running_does_nothing() -> void:
 
 func test_tick_success_calls_exit() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.mock_result = GOAPAction.ExecResult.SUCCESS
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -209,9 +207,9 @@ func test_tick_success_calls_exit() -> void:
 
 func test_tick_success_advances_to_next_action() -> void:
 	# Arrange
-	var action1 := MockAction.new()
+	var action1 := auto_free(MockAction.new()) as MockAction
 	action1.mock_result = GOAPAction.ExecResult.SUCCESS
-	var action2 := MockAction.new()
+	var action2 := auto_free(MockAction.new()) as MockAction
 	action2.mock_result = GOAPAction.ExecResult.RUNNING  # Keep action2 running
 	var plan: Array[GOAPAction] = [action1, action2]
 	_executor.start(plan)
@@ -228,7 +226,7 @@ func test_tick_success_advances_to_next_action() -> void:
 
 func test_tick_all_success_emits_plan_completed() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.mock_result = GOAPAction.ExecResult.SUCCESS
 	var plan: Array[GOAPAction] = [action]
 	var completed := [false]
@@ -245,9 +243,9 @@ func test_tick_all_success_emits_plan_completed() -> void:
 
 func test_tick_multi_action_plan_completes() -> void:
 	# Arrange
-	var action1 := MockAction.create_succeeding(&"Action1")
-	var action2 := MockAction.create_succeeding(&"Action2")
-	var action3 := MockAction.create_succeeding(&"Action3")
+	var action1 := auto_free(MockAction.create_succeeding(&"Action1")) as MockAction
+	var action2 := auto_free(MockAction.create_succeeding(&"Action2")) as MockAction
+	var action3 := auto_free(MockAction.create_succeeding(&"Action3")) as MockAction
 	var plan: Array[GOAPAction] = [action1, action2, action3]
 	var completed := [false]
 	_executor.plan_completed.connect(func(): completed[0] = true)
@@ -270,7 +268,7 @@ func test_tick_multi_action_plan_completes() -> void:
 
 func test_tick_failure_calls_exit() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.mock_result = GOAPAction.ExecResult.FAILURE
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -284,7 +282,7 @@ func test_tick_failure_calls_exit() -> void:
 
 func test_tick_failure_emits_plan_failed_with_action() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.action_name = &"FailingAction"
 	action.mock_result = GOAPAction.ExecResult.FAILURE
 	var plan: Array[GOAPAction] = [action]
@@ -302,9 +300,9 @@ func test_tick_failure_emits_plan_failed_with_action() -> void:
 
 func test_tick_failure_stops_execution() -> void:
 	# Arrange
-	var action1 := MockAction.new()
+	var action1 := auto_free(MockAction.new()) as MockAction
 	action1.mock_result = GOAPAction.ExecResult.FAILURE
-	var action2 := MockAction.new()
+	var action2 := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action1, action2]
 	_executor.start(plan)
 
@@ -319,9 +317,9 @@ func test_tick_failure_stops_execution() -> void:
 
 func test_tick_mid_plan_failure() -> void:
 	# Arrange
-	var action1 := MockAction.create_succeeding(&"Action1")
-	var action2 := MockAction.create_failing(&"Action2")
-	var action3 := MockAction.new()
+	var action1 := auto_free(MockAction.create_succeeding(&"Action1")) as MockAction
+	var action2 := auto_free(MockAction.create_failing(&"Action2")) as MockAction
+	var action3 := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action1, action2, action3]
 	var failed := [false]
 	_executor.plan_failed.connect(func(_a): failed[0] = true)
@@ -342,7 +340,7 @@ func test_tick_mid_plan_failure() -> void:
 
 func test_tick_running_continues_same_action() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.execute_frames = 5  # Keep running
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -362,7 +360,7 @@ func test_tick_running_continues_same_action() -> void:
 
 func test_action_started_signal_emitted() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.action_name = &"TestAction"
 	var plan: Array[GOAPAction] = [action]
 	var started_action := [null]
@@ -378,7 +376,7 @@ func test_action_started_signal_emitted() -> void:
 
 func test_action_ended_signal_emitted_on_success() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.mock_result = GOAPAction.ExecResult.SUCCESS
 	var plan: Array[GOAPAction] = [action]
 	var ended_action := [null]
@@ -399,7 +397,7 @@ func test_action_ended_signal_emitted_on_success() -> void:
 
 func test_action_ended_signal_emitted_on_failure() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.mock_result = GOAPAction.ExecResult.FAILURE
 	var plan: Array[GOAPAction] = [action]
 	var ended_result := [null]
@@ -415,7 +413,7 @@ func test_action_ended_signal_emitted_on_failure() -> void:
 
 func test_signals_emitted_in_order() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.mock_result = GOAPAction.ExecResult.SUCCESS
 	var plan: Array[GOAPAction] = [action]
 	var signal_order: Array[String] = []
@@ -438,7 +436,7 @@ func test_signals_emitted_in_order() -> void:
 
 func test_abort_stops_execution() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.execute_frames = 10  # Keep running
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -453,7 +451,7 @@ func test_abort_stops_execution() -> void:
 
 func test_abort_calls_exit_on_current_action() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.execute_frames = 10
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -468,7 +466,7 @@ func test_abort_calls_exit_on_current_action() -> void:
 
 func test_abort_without_agent_skips_exit() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	action.execute_frames = 10
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
@@ -484,7 +482,7 @@ func test_abort_without_agent_skips_exit() -> void:
 
 func test_abort_clears_plan() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action]
 	_executor.start(plan)
 
@@ -498,7 +496,7 @@ func test_abort_clears_plan() -> void:
 
 func test_abort_does_not_emit_signals() -> void:
 	# Arrange
-	var action := MockAction.new()
+	var action := auto_free(MockAction.new()) as MockAction
 	var plan: Array[GOAPAction] = [action]
 	var any_signal := [false]
 	_executor.plan_completed.connect(func(): any_signal[0] = true)
@@ -519,9 +517,9 @@ func test_abort_does_not_emit_signals() -> void:
 
 func test_multiple_starts_resets_properly() -> void:
 	# Arrange
-	var action1 := MockAction.new()
+	var action1 := auto_free(MockAction.new()) as MockAction
 	action1.mock_result = GOAPAction.ExecResult.SUCCESS
-	var action2 := MockAction.new()
+	var action2 := auto_free(MockAction.new()) as MockAction
 	action2.mock_result = GOAPAction.ExecResult.RUNNING  # Keep running to check index
 	_executor.start([action1] as Array[GOAPAction])
 	_executor.tick(_mock_agent, 0.016)  # Complete action1
@@ -538,9 +536,9 @@ func test_multiple_starts_resets_properly() -> void:
 
 func test_get_current_action_returns_correct_action() -> void:
 	# Arrange
-	var action1 := MockAction.new()
+	var action1 := auto_free(MockAction.new()) as MockAction
 	action1.action_name = &"First"
-	var action2 := MockAction.new()
+	var action2 := auto_free(MockAction.new()) as MockAction
 	action2.action_name = &"Second"
 	var plan: Array[GOAPAction] = [action1, action2]
 	_executor.start(plan)

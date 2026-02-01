@@ -17,7 +17,7 @@ var _action: GOAPAction
 
 
 func before_test() -> void:
-	_action = GOAPAction.new()
+	_action = auto_free(GOAPAction.new()) as GOAPAction
 
 
 func after_test() -> void:
@@ -382,7 +382,7 @@ func test_regress_without_state_keeps_all_preconditions() -> void:
 
 func test_mock_action_tracks_enter_called() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 
 	# Act
 	mock_action.enter(null)
@@ -393,7 +393,7 @@ func test_mock_action_tracks_enter_called() -> void:
 
 func test_mock_action_tracks_execute_count() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 
 	# Act
 	mock_action.execute(null, 0.0)
@@ -406,7 +406,7 @@ func test_mock_action_tracks_execute_count() -> void:
 
 func test_mock_action_tracks_exit_called() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 
 	# Act
 	mock_action.exit(null)
@@ -417,7 +417,7 @@ func test_mock_action_tracks_exit_called() -> void:
 
 func test_mock_action_returns_configured_result() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 	mock_action.mock_result = GOAPAction.ExecResult.FAILURE
 
 	# Act
@@ -429,7 +429,7 @@ func test_mock_action_returns_configured_result() -> void:
 
 func test_mock_action_delayed_execution() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 	mock_action.execute_frames = 2
 	mock_action.mock_result = GOAPAction.ExecResult.SUCCESS
 
@@ -441,7 +441,7 @@ func test_mock_action_delayed_execution() -> void:
 
 func test_mock_action_reset_clears_tracking() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 	mock_action.enter(null)
 	mock_action.execute(null, 0.0)
 	mock_action.exit(null)
@@ -457,7 +457,7 @@ func test_mock_action_reset_clears_tracking() -> void:
 
 func test_mock_action_on_enter_callback() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 	var callback_invoked := [false]
 	mock_action.on_enter = func(_agent): callback_invoked[0] = true
 
@@ -470,7 +470,7 @@ func test_mock_action_on_enter_callback() -> void:
 
 func test_mock_action_on_execute_callback() -> void:
 	# Arrange
-	var mock_action := MockAction.new()
+	var mock_action := auto_free(MockAction.new()) as MockAction
 	var callback_count := [0]
 	mock_action.on_execute = func(_agent): callback_count[0] += 1
 
@@ -484,11 +484,11 @@ func test_mock_action_on_execute_callback() -> void:
 
 func test_mock_action_create_succeeding_factory() -> void:
 	# Arrange & Act
-	var mock_action := MockAction.create_succeeding(
+	var mock_action := auto_free(MockAction.create_succeeding(
 		&"GatherWood",
 		{&"has_axe": true},
 		{&"has_wood": true}
-	)
+	)) as MockAction
 
 	# Assert
 	assert_str(mock_action.action_name).is_equal(&"GatherWood")
@@ -499,7 +499,7 @@ func test_mock_action_create_succeeding_factory() -> void:
 
 func test_mock_action_create_failing_factory() -> void:
 	# Arrange & Act
-	var mock_action := MockAction.create_failing(&"FailAction", {&"impossible": true})
+	var mock_action := auto_free(MockAction.create_failing(&"FailAction", {&"impossible": true})) as MockAction
 
 	# Assert
 	assert_str(mock_action.action_name).is_equal(&"FailAction")
@@ -508,7 +508,7 @@ func test_mock_action_create_failing_factory() -> void:
 
 func test_mock_action_create_delayed_factory() -> void:
 	# Arrange & Act
-	var mock_action := MockAction.create_delayed(&"LongAction", 5)
+	var mock_action := auto_free(MockAction.create_delayed(&"LongAction", 5)) as MockAction
 
 	# Assert
 	assert_str(mock_action.action_name).is_equal(&"LongAction")

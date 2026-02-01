@@ -45,30 +45,25 @@ var _created_agents: Array[GOAPAgent] = []
 
 ## Creates a MockAgent and tracks it for cleanup.
 func _create_mock_agent() -> MockAgent:
-	var agent := MockAgent.new()
+	var agent := auto_free(
+		MockAgent.new()
+	) as MockAgent
 	_created_agents.append(agent)
 	return agent
 
 
 func before_test() -> void:
 	# Get the autoload or create a new instance for testing
-	_orchestrator = Node.new()
+	_orchestrator = auto_free(Node.new()) as Node
 	_orchestrator.set_script(load("res://systems/goap/core/goap_orchestrator.gd"))
 	_orchestrator.clear()
 	_created_agents.clear()
 
 
 func after_test() -> void:
-	_orchestrator.clear()
-	# Free all created agents to prevent orphan warnings
-	for agent in _created_agents:
-		if is_instance_valid(agent):
-			agent.free()
 	_created_agents.clear()
-	# Free orchestrator last (after agents are freed)
-	if _orchestrator:
-		_orchestrator.free()
-		_orchestrator = null
+	_orchestrator.clear()
+	_orchestrator = null
 
 
 # =============================================================================
@@ -84,6 +79,7 @@ func test_register_agent_adds_to_list() -> void:
 
 	# Assert
 	assert_int(_orchestrator.get_agent_count()).is_equal(1)
+	collect_orphan_node_details()
 
 
 func test_register_multiple_agents() -> void:
@@ -99,6 +95,7 @@ func test_register_multiple_agents() -> void:
 
 	# Assert
 	assert_int(_orchestrator.get_agent_count()).is_equal(3)
+	collect_orphan_node_details()
 
 
 func test_register_same_agent_twice_ignored() -> void:
@@ -111,6 +108,7 @@ func test_register_same_agent_twice_ignored() -> void:
 
 	# Assert
 	assert_int(_orchestrator.get_agent_count()).is_equal(1)
+	collect_orphan_node_details()
 
 
 func test_unregister_agent_removes_from_list() -> void:
@@ -123,6 +121,7 @@ func test_unregister_agent_removes_from_list() -> void:
 
 	# Assert
 	assert_int(_orchestrator.get_agent_count()).is_equal(0)
+	collect_orphan_node_details()
 
 
 func test_unregister_nonexistent_agent_no_error() -> void:
@@ -132,6 +131,7 @@ func test_unregister_nonexistent_agent_no_error() -> void:
 	# Act & Assert - should not throw
 	_orchestrator.unregister_agent(agent)
 	assert_int(_orchestrator.get_agent_count()).is_equal(0)
+	collect_orphan_node_details()
 
 
 func test_get_agents_returns_copy() -> void:
@@ -145,6 +145,7 @@ func test_get_agents_returns_copy() -> void:
 
 	# Assert - original unchanged
 	assert_int(_orchestrator.get_agent_count()).is_equal(1)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -161,6 +162,7 @@ func test_clear_removes_all_agents() -> void:
 
 	# Assert
 	assert_int(_orchestrator.get_agent_count()).is_equal(0)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -178,6 +180,7 @@ func test_newly_registered_agent_can_think_immediately() -> void:
 
 	# Assert
 	assert_int(agent.think_count).is_equal(1)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -195,6 +198,7 @@ func test_agent_not_needing_think_is_skipped() -> void:
 
 	# Assert
 	assert_int(agent.think_count).is_equal(0)
+	collect_orphan_node_details()
 
 
 func test_mixed_agents_only_thinking_ones_processed() -> void:
@@ -214,6 +218,7 @@ func test_mixed_agents_only_thinking_ones_processed() -> void:
 	# Assert
 	assert_int(thinking_agent.think_count).is_greater(0)
 	assert_int(idle_agent.think_count).is_equal(0)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -239,6 +244,7 @@ func test_round_robin_cycles_through_agents() -> void:
 	# Assert - all agents should have been processed
 	for agent in agents:
 		assert_int(agent.think_count).is_greater(0)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -263,6 +269,7 @@ func test_min_think_interval_prevents_rapid_thinking() -> void:
 
 	# Assert - second think should be blocked
 	assert_int(agent.think_count).is_equal(first_count)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -292,6 +299,7 @@ func test_budget_limits_agents_per_frame() -> void:
 
 	# With tiny budget, shouldn't process all 100
 	assert_int(total_thinks).is_less(100)
+	collect_orphan_node_details()
 
 
 # =============================================================================
@@ -359,6 +367,7 @@ func test_handles_many_agents() -> void:
 	assert_int(_orchestrator.get_agent_count()).is_equal(100)
 	# Allow some overhead beyond stated budget
 	assert_bool(elapsed < 200000).is_true()  # 200ms max
+	collect_orphan_node_details()
 
 
 func test_dynamic_agent_add_remove() -> void:
@@ -380,3 +389,4 @@ func test_dynamic_agent_add_remove() -> void:
 	# Assert - persistent agent still tracked
 	assert_int(_orchestrator.get_agent_count()).is_equal(1)
 	assert_int(persistent_agent.think_count).is_greater(0)
+	collect_orphan_node_details()

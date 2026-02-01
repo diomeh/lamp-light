@@ -177,7 +177,7 @@ func test_after_plan_complete_does_not_crash() -> void:
 
 func test_mock_goal_dynamic_priority() -> void:
 	# Arrange
-	var mock_goal := MockGoal.new()
+	var mock_goal := auto_free(MockGoal.new()) as MockGoal
 	mock_goal.dynamic_priority = func(state: Dictionary) -> float:
 		var hunger: float = state.get(&"hunger", 0)
 		return hunger * 2.0
@@ -192,7 +192,7 @@ func test_mock_goal_dynamic_priority() -> void:
 
 func test_mock_goal_relevance_check() -> void:
 	# Arrange
-	var mock_goal := MockGoal.new()
+	var mock_goal := auto_free(MockGoal.new()) as MockGoal
 	mock_goal.desired_state = {&"has_food": true}
 	mock_goal.relevance_check = func(state: Dictionary) -> bool:
 		return state.get(&"is_hungry", false)
@@ -207,7 +207,7 @@ func test_mock_goal_relevance_check() -> void:
 
 func test_mock_goal_force_relevant_overrides_check() -> void:
 	# Arrange
-	var mock_goal := MockGoal.new()
+	var mock_goal := auto_free(MockGoal.new()) as MockGoal
 	mock_goal.relevance_check = func(_s): return true
 	mock_goal.force_relevant = false  # Force irrelevant
 
@@ -219,7 +219,7 @@ func test_mock_goal_force_relevant_overrides_check() -> void:
 
 func test_mock_goal_tracks_completion_count() -> void:
 	# Arrange
-	var mock_goal := MockGoal.new()
+	var mock_goal := auto_free(MockGoal.new()) as MockGoal
 
 	# Act
 	mock_goal.after_plan_complete(null)
@@ -232,7 +232,7 @@ func test_mock_goal_tracks_completion_count() -> void:
 
 func test_mock_goal_reset_clears_tracking() -> void:
 	# Arrange
-	var mock_goal := MockGoal.new()
+	var mock_goal := auto_free(MockGoal.new()) as MockGoal
 	mock_goal.after_plan_complete(null)
 	mock_goal.after_plan_complete(null)
 
@@ -245,7 +245,7 @@ func test_mock_goal_reset_clears_tracking() -> void:
 
 func test_mock_goal_on_complete_callback() -> void:
 	# Arrange
-	var mock_goal := MockGoal.new()
+	var mock_goal := auto_free(MockGoal.new()) as MockGoal
 	var callback_invoked := [false]
 	mock_goal.on_complete = func(_agent): callback_invoked[0] = true
 

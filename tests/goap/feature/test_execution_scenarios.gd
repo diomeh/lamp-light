@@ -18,15 +18,13 @@ var _agent: GOAPAgent
 
 func before_test() -> void:
 	_executor = GOAPExecutor.new()
-	_agent = GOAPAgent.new()
+	_agent = auto_free(GOAPAgent.new()) as GOAPAgent
 	_agent.blackboard = GOAPTestHelper.create_state()
 
 
 func after_test() -> void:
 	_executor = null
-	if _agent:
-		_agent.free()
-		_agent = null
+	_agent = null
 
 
 # =============================================================================

@@ -23,13 +23,11 @@ var _agent: FeatureTestAgent
 
 
 func before_test() -> void:
-	_agent = FeatureTestAgent.new()
+	_agent = auto_free(FeatureTestAgent.new()) as FeatureTestAgent
 
 
 func after_test() -> void:
-	if _agent:
-		_agent.free()
-		_agent = null
+	_agent = null
 
 
 # =============================================================================

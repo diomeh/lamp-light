@@ -24,9 +24,9 @@ func before_test() -> void:
 
 
 func after_test() -> void:
-	_state = null
-	_actions.clear()
 	_goal = null
+	_actions.clear()
+	_state = null
 
 
 # =============================================================================

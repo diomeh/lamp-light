@@ -84,13 +84,11 @@ var _npc: TestNPC
 
 
 func before_test() -> void:
-	_npc = TestNPC.new()
+	_npc = auto_free(TestNPC.new()) as TestNPC
 
 
 func after_test() -> void:
-	if _npc:
-		_npc.free()
-		_npc = null
+	_npc = null
 
 
 # =============================================================================
